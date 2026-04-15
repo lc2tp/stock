@@ -1,0 +1,206 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试API - 10日涨幅榜</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .controls {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        input[type="text"] {
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 120px;
+        }
+        button {
+            padding: 8px 20px;
+            font-size: 14px;
+            background-color: #409EFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        button:hover {
+            background-color: #66b1ff;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background-color: #f5f7fa;
+            font-weight: bold;
+            color: #606266;
+        }
+        tr:hover {
+            background-color: #f5f7fa;
+        }
+        .rank {
+            font-weight: bold;
+            color: #409EFF;
+        }
+        .positive {
+            color: #f56c6c;
+        }
+        .negative {
+            color: #67c23a;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #909399;
+        }
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #f56c6c;
+        }
+        .info {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f4f4f5;
+            border-radius: 4px;
+            color: #606266;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>10日累计涨幅前30 - API测试</h1>
+        
+        <div class="controls">
+            <label>目标日期：</label>
+            <input type="text" id="dateInput" value="20260408" placeholder="YYYYMMDD">
+            <button onclick="fetchData()">获取数据</button>
+        </div>
+        
+        <div id="info" class="info" style="display: none;"></div>
+        
+        <div id="loading" class="loading" style="display: none;">加载中...</div>
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <table id="dataTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>排名</th>
+                    <th>代码</th>
+                    <th>名称</th>
+                    <th>概念</th>
+                    <th>10日涨幅(%)</th>
+                    <th>单日涨幅(%)</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // 页面加载时自动获取数据
+        window.onload = function() {
+            fetchData();
+        };
+
+        async function fetchData() {
+            const dateInput = document.getElementById('dateInput');
+            const targetDate = dateInput.value.trim();
+            
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const table = document.getElementById('dataTable');
+            const info = document.getElementById('info');
+            
+            // 显示加载状态
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            table.style.display = 'none';
+            info.style.display = 'none';
+            
+            try {
+                // 调用后端API
+                const url = `http://localhost:8000/api/tushare/ten-day-top30?target_date=${targetDate}`;
+                console.log('请求URL:', url);
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                console.log('API响应:', data);
+                
+                if (data.success) {
+                    displayData(data.data, data.date);
+                    info.innerHTML = `✅ 成功获取数据！目标日期: ${data.date}，共 ${data.data.length} 只股票`;
+                    info.style.display = 'block';
+                } else {
+                    throw new Error(data.message || '获取数据失败');
+                }
+            } catch (err) {
+                console.error('错误:', err);
+                error.innerHTML = `❌ 错误: ${err.message}<br><br>请确保：<br>1. 后端服务已启动 (http://localhost:8000)<br>2. 日期格式正确 (YYYYMMDD)`;
+                error.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function displayData(stocks, date) {
+            const tableBody = document.getElementById('tableBody');
+            const table = document.getElementById('dataTable');
+            
+            // 清空表格
+            tableBody.innerHTML = '';
+            
+            // 填充数据
+            stocks.forEach((stock, index) => {
+                const row = document.createElement('tr');
+                
+                const tenDayChangeClass = stock.ten_day_change >= 0 ? 'positive' : 'negative';
+                const dailyChangeClass = stock.daily_change >= 0 ? 'positive' : 'negative';
+                
+                row.innerHTML = `
+                    <td class="rank">${index + 1}</td>
+                    <td>${stock.symbol}</td>
+                    <td>${stock.name}</td>
+                    <td>${stock.industry || '-'}</td>
+                    <td class="${tenDayChangeClass}">${stock.ten_day_change >= 0 ? '+' : ''}${stock.ten_day_change}%</td>
+                    <td class="${dailyChangeClass}">${stock.daily_change >= 0 ? '+' : ''}${stock.daily_change}%</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            table.style.display = 'table';
+        }
+    </script>
+</body>
+</html>

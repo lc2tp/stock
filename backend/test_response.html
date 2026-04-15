@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script type="text/javascript" src="//s.thsi.cn/js/chameleon/chameleon.1.9.min.1776079.js"></script> <script type="module" crossorigin src="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/polyfills-5ede770c.js"></script>
+
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>同花顺问财</title>
+    <meta
+      name="keywords"
+      content="问财、股票、诊股、智能选股、基金、港美股、指数、债券、期货、保险、财经新闻、新股上会、概念题材、宏观经济"
+    />
+    <meta
+      name="description"
+      content="同花顺旗下专业的智能选股平台，通过AI技术致力于为股民提供智能选股、量化投资、技术分析、快速选股等服务，覆盖股票、指数、美股、港股、行情、基金、新三板、债券、期货、外汇、科创板、保险、理财、宏观、资讯、百科等信息，从而有效提高投资者的投资逻辑和效能"
+    />
+    <meta name="google" content="notranslate" />
+    <meta name="baidu-site-verification" content="codeva-54dqpXyfMg" />
+
+    <!-- 性能优化：DNS 预解析和预连接 -->
+    <link rel="dns-prefetch" href="//s.thsi.cn" />
+    <link rel="dns-prefetch" href="//www.iwencai.com" />
+    <link rel="dns-prefetch" href="//search.10jqka.com.cn/" />
+
+    <script type="text/javascript" src="//s.thsi.cn/hxapp/m/base/js/skywalking.1.1.27.min.js"></script>
+    <script type="text/javascript" src="//s.thsi.cn/cd/weblog/0.0.5/weblog.js"></script>
+    <script type="text/javascript" crossorigin="anonymous" src="//s.thsi.cn/cd/ths-frontend-common-lib-container/v1.3.5/business/thsIphoneXAdapter.js"
+    ></script>
+    <script type="text/javascript" crossorigin="anonymous" src="//s.thsi.cn/cb?js/ta_https.min.js;js/m/v2.1/common/;user.js;basic.js;bridge.js;zepto.js;iwencai/js/lib/;js/m/v2.10/business/;stat.js;stat.js;iwencai/js/lib/;md5/md5.min.js"
+    ></script>
+    <script type="text/javascript" crossorigin="anonymous" src="//s.thsi.cn/cb?;/js/;jquery-1.8.3-assign.min.js;sso_https.min.js;vue-paginate-1.9.3.js;ta_https_1.2.min.js;js/m/v2.10/business/;stat.js"
+    ></script>
+    <script type="text/javascript" crossorigin="anonymous" src="//s.thsi.cn/cd/b2cweb-fe-common-resource-pod/js/cefApi/1.5.9/cefApi.min.js"
+    ></script>
+    <script type="text/javascript" src="//s.thsi.cn/cd/easy-fetch-platform-frontend-docker-pod/iclarity.v1.0.8.umd.js"></script>
+    <script type="module" crossorigin="anonymous" src="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/main-653ddb5a.js"></script>
+    <link crossorigin="anonymous" rel="modulepreload" href="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/vendor-chart-cb30e171.js">
+    <link crossorigin="anonymous" rel="modulepreload" href="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/vue-core-23329aeb.js">
+    <link crossorigin="anonymous" rel="modulepreload" href="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/vue-utils-a89ce5cf.js">
+    <link crossorigin="anonymous" rel="modulepreload" href="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/vendor-chatui-63573c15.js">
+    <link crossorigin="anonymous" rel="modulepreload" href="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/vendor-http-e056c0b7.js">
+    <link crossorigin="anonymous" rel="modulepreload" href="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/vendor-utils-16a56699.js">
+    <link crossorigin="anonymous" rel="modulepreload" href="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/customXss-66bda695.js">
+    <link crossorigin="anonymous" rel="modulepreload" href="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/vendor-pinia-02f85615.js">
+    <link crossorigin="anonymous" rel="modulepreload" href="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/vendor-date-e161045e.js">
+    <link crossorigin="anonymous" rel="modulepreload" href="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/vendor-robot-278d7ec6.js">
+    <link crossorigin="anonymous" rel="modulepreload" href="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/directives-1b33aebf.js">
+    <link crossorigin="anonymous" rel="modulepreload" href="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/vender-ui-7a12e076.js">
+    <link crossorigin="anonymous" rel="modulepreload" href="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/index-f7ebb3f8.js">
+    <link crossorigin="anonymous" rel="stylesheet" href="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/directives-eb118363.css">
+    <link crossorigin="anonymous" rel="stylesheet" href="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/index-74b92cb8.css">
+    <link crossorigin="anonymous" rel="stylesheet" href="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/index-14593874.css">
+    <script type="module">import.meta.url;import("_").catch(()=>1);async function* g(){};if(location.protocol!="file:"){window.__vite_is_modern_browser=true}</script>
+    <script type="module">!function(){if(window.__vite_is_modern_browser)return;console.warn("vite: loading legacy chunks, syntax error above and the same error below should be ignored");var e=document.getElementById("vite-legacy-polyfill"),n=document.createElement("script");n.src=e.src,n.onload=function(){System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))},document.body.appendChild(n)}();</script>
+  <script>window.redRabbitExpJson = 'jejkjtfkd.jejkjtfkd_layer.PC问财-开发自测.5.17.0 策略需求'</script></head>
+  <body>
+    <noscript>
+      <strong>
+        We're sorry but 同花顺问财选股 doesn't work properly without JavaScript enabled. Please enable it to continue..
+      </strong>
+    </noscript>
+    <script>
+      // 移动设备跳转wap首页的逻辑
+      (function () {
+        var getParamByName = function (paramName, decodeFlag, url) {
+          var paramReg = new RegExp('[?&]' + paramName + '=([^&#]+)');
+          decodeFlag = typeof decodeFlag === 'boolean' ? decodeFlag : false;
+          var tagUrl = url || window.location.href;
+          var matchRes = tagUrl.match(paramReg);
+          var tagVal = matchRes ? matchRes[1] : '';
+          if (tagVal && decodeFlag) {
+            tagVal = decodeURIComponent(tagVal);
+          }
+          return tagVal;
+        };
+        var getParamStrArr = []; // 需要添加的get参数字符串数组
+        var hashParamStrArr = []; // 需要添加的hash参数字符串数组
+
+        // 问句和领域参数逻辑  wap项目会将下边带问句、领域参数的状况转换到/result路由下的对应参数的逻辑上去
+        var wParamValue = getParamByName('w');
+        var querytypeParamValue = getParamByName('querytype');
+        if (wParamValue) {
+          getParamStrArr.push('q=' + wParamValue);
+          if (querytypeParamValue) {
+            getParamStrArr.push('queryType=' + querytypeParamValue);
+          }
+        }
+
+        // from 参数逻辑
+        var fromParamValue = getParamByName('from');
+        if (fromParamValue) {
+          getParamStrArr.push('from=' + fromParamValue);
+        }
+
+        // 分享助力assistId 参数逻辑
+        var assistIdParamValue = getParamByName('assistId');
+        if (assistIdParamValue) {
+          hashParamStrArr.push('assistId=' + assistIdParamValue);
+        }
+
+        // 分享攒次数hostUserId 参数逻辑
+        var hostUserIdParamValue = getParamByName('hostUserId');
+        var shareTsParamValue = getParamByName('shareTs');
+        if (hostUserIdParamValue && shareTsParamValue) {
+          hashParamStrArr.push('hostUserId=' + hostUserIdParamValue);
+          hashParamStrArr.push('shareTs=' + shareTsParamValue);
+        }
+        // 首页地址拼接
+        var mobileUrl = location.protocol + '//' + location.host;
+        mobileUrl += '/unifiedmobile/';
+
+        // get参数拼接逻辑
+        if (getParamStrArr.length > 0) {
+          mobileUrl += '?' + getParamStrArr.join('&');
+        }
+        // hash参数拼接逻辑
+        if (hashParamStrArr.length > 0) {
+          mobileUrl += '#/?' + hashParamStrArr.join('&');
+        }
+
+        var ua = navigator.userAgent;
+        // 手抄等APP中跳转wap
+        if (/Hexin_Gphone\/|IHexin\/|innerversion\/[I|G]Z|ifind_[g|i]phone\/|Hexin_Fortune\/|GphoneIjiJin\/|IphoneIJiJinAPP/i.test(ua)) {
+          // 当视口宽度小于768时跳转移动版问财，768取值于body标签的min-width属性
+          window.location.href = mobileUrl;
+        }
+      })();
+    </script>
+    <div id="app">
+      <div class="loading-line-wrapper">
+        <div class="loading-run-box">
+          <div class="loading-run"></div>
+        </div>
+      </div>
+      <style>
+        .loading-line-wrapper {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(255, 255, 255, 0.5);
+          z-index: 1000;
+        }
+        .loading-line-wrapper .loading-run-box {
+          position: absolute;
+          top: 0;
+          width: 100%;
+          height: 3px;
+        }
+        .loading-line-wrapper .loading-run-box .loading-run {
+          height: 3px;
+          width: 25%;
+          background: #68e;
+          transform-origin: 0 0;
+          animation: progressAnimation 1s infinite;
+          animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
+          animation-delay: 0.1s;
+        }
+        @keyframes progressAnimation {
+          0% {
+            transform: scaleX(0);
+          }
+          50% {
+            transform: scaleX(5);
+          }
+          to {
+            transform: scaleX(5) translateX(100%);
+          }
+        }
+      </style>
+    </div>
+    
+
+    <script>
+      // 低版本IE浏览器(IE10及以下)提示升级和跳转旧版的弹层脚本
+      function checkLowerBrowser() {
+        var userAgent = window.navigator.userAgent.toLowerCase();
+        var msieVersionReg = /msie\s*([0-9.]+)/i;
+        var tridentVersionReg = /trident\/[0-9.]+.*rv\:([0-9.]+)/i;
+        var msieMatchRes = userAgent.match(msieVersionReg);
+        var tridentMatchRes = userAgent.match(tridentVersionReg);
+        var curIEVersion = -1;
+        if (msieMatchRes) {
+          curIEVersion = parseInt(msieMatchRes[1]);
+        } else if (tridentMatchRes) {
+          curIEVersion = parseInt(tridentMatchRes[1]);
+        }
+        if (curIEVersion > 0 && curIEVersion < 11) {
+          var cssString = [
+            '.less-than-ie-box { position: fixed; z-index: 999; box-sizing: border-box; top: 50%; left: 50%; width: 500px; height: 296px; margin-left:-250px; margin-top:-148px; padding: 20px; background: #fff; border: 1px solid #eaeaea; box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.2); color: #1E2024;}',
+            '.less-than-ie-box .close { position: absolute; top: 10px; right: 18px; width: 20px; height: 20px; background: url("//i.thsi.cn/iwencai/pcwencai/icon-merge.png") no-repeat -8px -42px; cursor: pointer; }',
+            '.less-than-ie-box .close:hover{ background: url("//i.thsi.cn/iwencai/pcwencai/icon-merge.png") no-repeat -40px -42px; }',
+            '.less-than-ie-box .title { font-size: 20px; text-align: center; margin: 8px 0 20px; }',
+            '.less-than-ie-box .tip { margin-bottom: 10px; font-size: 16px; text-align: left; line-height: 30px; }',
+            '.less-than-ie-box .download { height: 66px; padding: 20px 50px; }',
+            '.less-than-ie-box .download a { display: inline-block; width: 62px; height: 62px; margin: 0 30px;}',
+            '.less-than-ie-box .ie { background: url("//i.thsi.cn/iwencai/pcwencai/ie.png") no-repeat;}',
+            '.less-than-ie-box .chrome { background: url("//i.thsi.cn/iwencai/pcwencai/chrome.png") no-repeat;}',
+            '.less-than-ie-box .ps { margin-top: 14px; font-size: 14px; color: #999; text-align: left;}',
+            '.less-than-ie-box .old-link { float: right; color: #1570E8;}',
+          ].join('');
+          var styleElem = document.createElement('style');
+          styleElem.type = 'text/css';
+          if (styleElem.styleSheet) {
+            styleElem.styleSheet.cssText = cssString;
+          } else {
+            var cssText = document.createTextNode(cssString);
+            styleElem.appendChild(cssText);
+          }
+          document.getElementsByTagName('head')[0].appendChild(styleElem);
+
+          var appendHtml = [
+            '<div class="less-than-ie-box" id="less_then_ie_box">',
+            '<h6 class="title">是时候升级浏览器了 </h6>',
+            '<p class="tip">您当前的浏览器版本过低，为了更好的体验我们的服务，建议升级您的浏览器~</p>',
+            '<p class="download">',
+            '<a href="//jingyan.baidu.com/article/0eb457e5e7797403f1a90520.html" class="ie" target="_blank"></a>',
+            '<a href="//www.google.cn/chrome/" class="chrome" target="_blank"></a>',
+            '</p>',
+            '<p class="ps">*点击图标，即可进入对应浏览器升级哦~<a id="old_link" class="old-link">返回旧版</a></p>',
+            '<i class="close" id="less_then_ie_box_close_btn"></i>',
+            '</div>',
+          ].join('');
+          document.body.insertAdjacentHTML('beforeend', appendHtml);
+
+          function setCookie(name, value, expiresTime) {
+            var defaultExpiresTime = 10 * 12 * 30 * 24 * 60 * 60 * 1000; // 默认十年有效期
+            var expiresDate = new Date();
+            var expiresTimestamp = expiresDate.getTime() + defaultExpiresTime;
+            expiresDate.setTime(expiresTimestamp);
+            document.cookie = name + '=' + value + ';expires=' + expiresDate.toGMTString() + ';path=/';
+          }
+          function getCookie(key) {
+            var arr1 = document.cookie.split(';');
+            try {
+              for (var i = 0; i < arr1.length; i++) {
+                var arr2 = arr1[i].split('=');
+                if (arr2[0].replace(/(^\s+)|(\s+$)/g, '') === key) {
+                  return decodeURIComponent(arr2[1]);
+                }
+              }
+            } catch (e) {}
+            return null;
+          }
+          function clickOldLink() {
+            var userid = getCookie('userid');
+            var href = window.location.protocol + '//' + window.location.host;
+            setCookie('wencai_pc_version', '0');
+            if (userid) {
+              $.ajax({
+                url: '/iwencai/userinfo/iwc/userinfo/pc/version/save/',
+                type: 'POST',
+                data: JSON.stringify({
+                  user_id: String(userid),
+                  version: '0',
+                }),
+                contentType: 'application/json',
+                complete: function () {
+                  window.location.href = href;
+                },
+              });
+            }
+            setTimeout(function () {
+              window.location.href = href;
+            }, 1000);
+          }
+          var oldLink = document.getElementById('old_link');
+          oldLink.addEventListener('click', clickOldLink);
+
+          function closePopBox() {
+            var popBox = document.getElementById('less_then_ie_box');
+            popBox.style.display = 'none';
+          }
+
+          var closeBtn = document.getElementById('less_then_ie_box_close_btn');
+          if (window.attachEvent) {
+            closeBtn.attachEvent('onclick', closePopBox);
+          } else {
+            closeBtn.addEventListener('click', closePopBox);
+          }
+        }
+      }
+      if (window.attachEvent) {
+        window.attachEvent('onload', checkLowerBrowser);
+      } else {
+        window.addEventListener('load', checkLowerBrowser);
+      }
+    </script>
+  <script>
+(function() {
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            const swUrl = '/unifiedwap/serviceWorker.js?version=5.17.0';
+            navigator.serviceWorker.register(swUrl)
+                .then(function(registration) {
+                    console.log('[SW] Registration successful:', registration.scope);
+
+                    // 监听更新
+                    registration.addEventListener('updatefound', function() {
+                        const newWorker = registration.installing;
+                        console.log('[SW] New service worker found, installing...');
+
+                        newWorker.addEventListener('statechange', function() {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                console.log('[SW] New service worker installed, ready to activate');
+                                // 提示用户刷新页面以使用新版本
+                                if (window.__SW_UPDATE_CALLBACK__) {
+                                    window.__SW_UPDATE_CALLBACK__(registration);
+                                } else {
+                                    // 默认提示
+                                    console.info('[SW] New version available! Please refresh the page to update.');
+                                }
+                            }
+                        });
+                    });
+                })
+                .catch(function(error) {
+                    console.error('[SW] Registration failed:', error);
+                    // 注册失败不影响应用运行，只是没有离线缓存功能
+                    console.warn('[SW] Application will continue without service worker support');
+                });
+        });
+    } else {
+        console.warn('[SW] Service Worker is not supported in this browser');
+    }
+})();
+</script>
+  <script nomodule>!function(){var e=document,t=e.createElement("script");if(!("noModule"in t)&&"onbeforeload"in t){var n=!1;e.addEventListener("beforeload",(function(e){if(e.target===t)n=!0;else if(!e.target.hasAttribute("nomodule")||!n)return;e.preventDefault()}),!0),t.type="module",t.src=".",e.head.appendChild(t),t.remove()}}();</script>
+  <script nomodule crossorigin id="vite-legacy-polyfill" src="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/polyfills-legacy-484033f2.js"></script>
+  <script nomodule crossorigin id="vite-legacy-entry" data-src="//s.thsi.cn/cd/iwc-web-ai-unifiedwap-public/static/5.17.0/main-legacy-8b13285f.js">System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))</script>
+</body>
+</html>
