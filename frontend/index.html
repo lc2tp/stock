@@ -1443,7 +1443,7 @@
                         <input type="text" id="capital-flow-concept-name" placeholder="输入板块名称" style="padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); min-width: 150px;">
                     </div>
                     
-                    <button class="btn btn-small" onclick="loadCapitalFlowData()" style="background: var(--primary-color); color: white;">
+                    <button class="btn btn-small" onclick="loadCapitalFlowData()" style="background: #ffa500; color: white;">
                         查询
                     </button>
                 </div>
@@ -4920,11 +4920,11 @@
             const dates = Object.keys(filteredData[0].daily_flows).sort().reverse();
             
             let html = `
-                <table style="width: 100%; border-collapse: collapse;">
+                <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
                     <thead>
                         <tr style="background: var(--bg-secondary);">
                             <th style="padding: 12px; text-align: center; border-bottom: 1px solid var(--border-color); width: 60px; min-width: 60px;">排名</th>
-                            <th style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); min-width: 150px;">板块名称</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); width: 180px; min-width: 180px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">板块名称</th>
                             <th style="padding: 12px; text-align: center; border-bottom: 1px solid var(--border-color); width: 140px; min-width: 140px;">板块类型</th>
                             ${dates.map(d => {
                                 const isSorted = capitalFlowSortColumn === d;
@@ -4944,7 +4944,7 @@
                 html += `
                     <tr style="border-bottom: 1px solid var(--border-color);">
                         <td style="padding: 12px; text-align: center; font-weight: 600;">${index + 1}</td>
-                        <td style="padding: 12px; font-weight: 500;">${item.concept_name}</td>
+                        <td style="padding: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.concept_name}">${item.concept_name}</td>
                         <td style="padding: 12px; text-align: center; color: var(--text-muted);">${item.concept_type || '-'}</td>
                         ${dates.map(d => {
                             const flow = item.daily_flows[d] / 100000000;
