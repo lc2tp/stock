@@ -941,3 +941,310 @@ def search_stock_theme(keyword: str):
             db.close()
     except Exception as e:
         return {"success": False, "message": f"查询失败: {str(e)}"}
+
+
+@router.get("/api/capital-flow/dates")
+def get_capital_flow_dates():
+    """
+    获取资金流向日期列表
+    """
+    try:
+        from models.database import Database
+        db = Database()
+        if not db.connect():
+            return {"success": False, "message": "数据库连接失败"}
+        
+        try:
+            dates = db.get_concept_capital_flow_dates()
+            return {"success": True, "data": dates}
+        finally:
+            db.close()
+    except Exception as e:
+        return {"success": False, "message": f"获取日期列表失败: {str(e)}"}
+
+
+@router.get("/api/capital-flow/types")
+def get_capital_flow_types():
+    """
+    获取板块类型列表
+    """
+    try:
+        from models.database import Database
+        db = Database()
+        if not db.connect():
+            return {"success": False, "message": "数据库连接失败"}
+        
+        try:
+            types = db.get_concept_capital_flow_types()
+            return {"success": True, "data": types}
+        finally:
+            db.close()
+    except Exception as e:
+        return {"success": False, "message": f"获取类型列表失败: {str(e)}"}
+
+
+@router.get("/api/capital-flow/consecutive")
+def get_consecutive_capital_flow(days: int = 2, flow_type: str = 'inflow', concept_type: str = None):
+    """
+    获取连续N日资金流入/流出的板块
+    days: 连续天数（2-6）
+    flow_type: 'inflow' 连续流入，'outflow' 连续流出
+    concept_type: 板块类型筛选
+    """
+    try:
+        from services.capital_flow_service import calculate_consecutive_capital_flow
+        
+        if days < 2 or days > 6:
+            return {"success": False, "message": "天数必须在2-6之间"}
+        
+        if flow_type not in ['inflow', 'outflow']:
+            return {"success": False, "message": "flow_type必须是inflow或outflow"}
+        
+        data = calculate_consecutive_capital_flow(days, flow_type, concept_type)
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "message": f"查询失败: {str(e)}"}
+
+
+@router.get("/api/capital-flow/refresh")
+def refresh_capital_flow(date: str = Query(None)):
+    """
+    刷新资金流向数据
+    """
+    try:
+        from services.capital_flow_service import fetch_and_save_concept_capital_flow
+        from datetime import datetime
+        
+        if not date:
+            date = datetime.now().strftime("%Y-%m-%d")
+        
+        success = fetch_and_save_concept_capital_flow(date)
+        
+        if success:
+            return {"success": True, "message": f"{date} 资金流向数据刷新成功"}
+        else:
+            return {"success": False, "message": f"{date} 资金流向数据刷新失败"}
+    except Exception as e:
+        return {"success": False, "message": f"刷新失败: {str(e)}"}
+
+
+@router.get("/api/rank-analysis/dates")
+def get_rank_analysis_dates():
+    """
+    获取榜单分析日期列表
+    """
+    try:
+        db = Database()
+        if not db.connect():
+            return {"success": False, "message": "数据库连接失败"}
+        
+        try:
+            cursor = db.connection.cursor()
+            cursor.execute("SELECT DISTINCT date FROM daily_change ORDER BY date DESC")
+            dates = cursor.fetchall()
+            cursor.close()
+            
+            formatted_dates = []
+            for d in dates:
+                date_str = d[0]
+                if len(date_str) == 8:
+                    formatted_dates.append(f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}")
+                else:
+                    formatted_dates.append(date_str)
+            
+            return {"success": True, "data": formatted_dates}
+        finally:
+            db.close()
+    except Exception as e:
+        return {"success": False, "message": f"获取日期列表失败: {str(e)}"}
+
+
+@router.get("/api/rank-analysis/stocks")
+def get_rank_analysis_stocks(start_date: str, end_date: str):
+    """
+    获取在指定日期范围内的榜单股票
+    """
+    try:
+        # 转换日期格式
+        def to_db_date(date_str):
+            return date_str.replace('-', '')
+        
+        start_db = to_db_date(start_date)
+        end_db = to_db_date(end_date)
+        
+        # 获取所有有数据的交易日
+        db = Database()
+        if not db.connect():
+            return {"success": False, "message": "数据库连接失败"}
+        
+        try:
+            cursor = db.connection.cursor()
+            cursor.execute("""
+                SELECT DISTINCT date FROM daily_change 
+                WHERE date >= ? AND date <= ? 
+                ORDER BY date
+            """, (start_db, end_db))
+            dates = [row[0] for row in cursor.fetchall()]
+            cursor.close()
+            
+            if not dates:
+                return {"success": True, "data": {"dates": [], "stocks": [], "total_days": 0}}
+            
+            # 对每个交易日，计算前30名
+            tushare_service = get_tushare_service()
+            stocks_data = {}
+            
+            for date_str in dates:
+                # 计算当天的前30名
+                top30 = tushare_service.calculate_top30(date_str, days=10)
+                
+                # 记录每只股票的出现情况
+                for idx, stock in enumerate(top30):
+                    ts_code = stock['ts_code']
+                    if ts_code not in stocks_data:
+                        stocks_data[ts_code] = {
+                            'ts_code': ts_code,
+                            'symbol': stock['symbol'],
+                            'name': stock['name'],
+                            'industry': stock.get('industry', '-'),
+                            'appearances': []
+                        }
+                    
+                    # 转换日期格式
+                    formatted_date = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+                    
+                    stocks_data[ts_code]['appearances'].append({
+                        'date': formatted_date,
+                        'rank': idx + 1,
+                        'ten_day_change': stock.get('cumulative_change', 0),
+                        'daily_change': stock.get('daily_change', 0)
+                    })
+            
+            # 转换为列表并排序
+            result = []
+            for ts_code, data in stocks_data.items():
+                data['days_count'] = len(data['appearances'])
+                data['dates_list'] = [app['date'] for app in data['appearances']]
+                result.append(data)
+            
+            result.sort(key=lambda x: x['days_count'], reverse=True)
+            
+            # 转换日期格式
+            formatted_dates = [f"{d[:4]}-{d[4:6]}-{d[6:8]}" for d in dates]
+            
+            return {
+                "success": True, 
+                "data": {
+                    "dates": formatted_dates,
+                    "stocks": result,
+                    "total_days": len(dates)
+                }
+            }
+        finally:
+            db.close()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"success": False, "message": f"获取榜单股票失败: {str(e)}"}
+
+
+@router.get("/api/rank-analysis/daily-changes")
+def get_rank_analysis_daily_changes(ts_codes: str, start_date: str, end_date: str):
+    """
+    获取指定股票的每日涨幅数据
+    ts_codes: 股票代码列表，用逗号分隔
+    """
+    try:
+        db = Database()
+        if not db.connect():
+            return {"success": False, "message": "数据库连接失败"}
+        
+        try:
+            ts_code_list = ts_codes.split(',')
+            
+            # 转换日期格式
+            def to_db_date(date_str):
+                return date_str.replace('-', '')
+            
+            start_db = to_db_date(start_date)
+            end_db = to_db_date(end_date)
+            
+            # 获取所有有数据的交易日
+            cursor = db.connection.cursor()
+            cursor.execute("""
+                SELECT DISTINCT date FROM daily_change 
+                WHERE date >= ? AND date <= ? 
+                ORDER BY date
+            """, (start_db, end_db))
+            dates = [row[0] for row in cursor.fetchall()]
+            
+            # 获取每只股票的数据
+            stocks_data = {}
+            for ts_code in ts_code_list:
+                cursor.execute("""
+                    SELECT ts_code, symbol, name, industry, date, close, change
+                    FROM daily_change 
+                    WHERE ts_code = ? AND date >= ? AND date <= ?
+                    ORDER BY ts_code, date
+                """, (ts_code, start_db, end_db))
+                
+                rows = cursor.fetchall()
+                if not rows:
+                    continue
+                
+                stock_info = None
+                daily_changes = {}
+                for row in rows:
+                    if not stock_info:
+                        stock_info = {
+                            'ts_code': row[0],
+                            'symbol': row[1],
+                            'name': row[2],
+                            'industry': row[3] or '-'
+                        }
+                    daily_changes[row[4]] = {
+                        'close': row[5],
+                        'change': row[6]
+                    }
+                
+                if stock_info:
+                    stocks_data[ts_code] = {
+                        **stock_info,
+                        'daily_changes': daily_changes
+                    }
+            
+            cursor.close()
+            
+            # 转换为列表，并补全所有日期
+            result = []
+            formatted_dates = [f"{d[:4]}-{d[4:6]}-{d[6:8]}" for d in dates]
+            
+            for ts_code, data in stocks_data.items():
+                complete_changes = []
+                for d in dates:
+                    formatted_d = f"{d[:4]}-{d[4:6]}-{d[6:8]}"
+                    change_data = data['daily_changes'].get(d, {'close': None, 'change': 0.0})
+                    complete_changes.append({
+                        'date': formatted_d,
+                        'close': change_data['close'],
+                        'change': change_data['change']
+                    })
+                
+                result.append({
+                    **data,
+                    'daily_changes': complete_changes
+                })
+            
+            return {
+                "success": True, 
+                "data": {
+                    "dates": formatted_dates,
+                    "stocks_data": result
+                }
+            }
+        finally:
+            db.close()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"success": False, "message": f"获取每日涨幅数据失败: {str(e)}"}

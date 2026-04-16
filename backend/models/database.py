@@ -177,6 +177,22 @@ class Database:
         )
         """
         
+        # 创建板块资金流向表
+        create_concept_capital_flow_table = """
+        CREATE TABLE IF NOT EXISTS concept_capital_flow (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            concept_code TEXT NOT NULL,
+            concept_name TEXT NOT NULL,
+            concept_type TEXT,
+            date TEXT NOT NULL,
+            net_inflow REAL,
+            main_net_inflow REAL,
+            retail_net_inflow REAL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(concept_code, date)
+        )
+        """
+        
         # 执行创建表语句
         try:
             cursor.execute(create_theme_table)
@@ -188,6 +204,7 @@ class Database:
             cursor.execute(create_concept_daily_table)
             cursor.execute(create_jiuyang_theme_table)
             cursor.execute(create_jiuyang_stock_action_table)
+            cursor.execute(create_concept_capital_flow_table)
             self.connection.commit()
             print("数据库表创建成功")
         except Exception as e:
@@ -611,5 +628,260 @@ class Database:
             print(f"已删除日期 {date} 的韭研公社数据")
         except Exception as e:
             print(f"删除韭研公社数据失败: {e}")
+        finally:
+            cursor.close()
+    
+    def insert_concept_capital_flow(self, concept_code, concept_name, concept_type, date, net_inflow, main_net_inflow=None, retail_net_inflow=None):
+        """
+        插入板块资金流向数据
+        """
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute(
+                "INSERT OR REPLACE INTO concept_capital_flow (concept_code, concept_name, concept_type, date, net_inflow, main_net_inflow, retail_net_inflow) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (concept_code, concept_name, concept_type, date, net_inflow, main_net_inflow, retail_net_inflow)
+            )
+            self.connection.commit()
+        finally:
+            cursor.close()
+    
+    def get_concept_capital_flow(self, start_date, end_date):
+        """
+        获取指定日期范围内的板块资金流向数据
+        """
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute(
+                """
+                SELECT concept_code, concept_name, concept_type, date, net_inflow, main_net_inflow, retail_net_inflow
+                FROM concept_capital_flow
+                WHERE date BETWEEN ? AND ?
+                ORDER BY date DESC, net_inflow DESC
+                """,
+                (start_date, end_date)
+            )
+            results = []
+            for row in cursor.fetchall():
+                results.append({
+                    'concept_code': row[0],
+                    'concept_name': row[1],
+                    'concept_type': row[2],
+                    'date': row[3],
+                    'net_inflow': row[4],
+                    'main_net_inflow': row[5],
+                    'retail_net_inflow': row[6]
+                })
+            return results
+        finally:
+            cursor.close()
+    
+    def get_concept_capital_flow_dates(self):
+        """
+        获取所有有资金流向数据的日期列表
+        """
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute("SELECT DISTINCT date FROM concept_capital_flow ORDER BY date DESC")
+            results = cursor.fetchall()
+            return [row[0] for row in results]
+        finally:
+            cursor.close()
+    
+    def get_concept_capital_flow_types(self):
+        """
+        获取所有板块类型列表
+        """
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute("SELECT DISTINCT concept_type FROM concept_capital_flow WHERE concept_type IS NOT NULL AND concept_type != '' ORDER BY concept_type")
+            results = cursor.fetchall()
+            return [row[0] for row in results]
+        finally:
+            cursor.close()
+    
+    def _convert_date_format(self, date_str):
+        """
+        转换日期格式：
+        - YYYY-MM-DD -> YYYYMMDD
+        - YYYYMMDD -> YYYY-MM-DD
+        """
+        if not date_str:
+            return date_str
+        
+        if '-' in date_str:
+            # YYYY-MM-DD -> YYYYMMDD
+            return date_str.replace('-', '')
+        else:
+            # YYYYMMDD -> YYYY-MM-DD
+            if len(date_str) == 8:
+                return f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:8]}"
+            return date_str
+    
+    def get_top30_dates(self):
+        """
+        获取所有有榜单数据的日期列表，返回格式为 YYYY-MM-DD
+        """
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute("SELECT DISTINCT date FROM daily_top30 ORDER BY date DESC")
+            results = cursor.fetchall()
+            return [self._convert_date_format(row[0]) for row in results]
+        finally:
+            cursor.close()
+    
+    def get_stocks_in_top30_between_dates(self, start_date, end_date):
+        """
+        获取在指定日期范围内一直在榜单上的股票
+        返回：
+        - 股票列表及其出现的日期和排名
+        - 总天数
+        - 每只股票出现的天数
+        """
+        # 转换日期格式为 YYYYMMDD
+        start_date_db = self._convert_date_format(start_date)
+        end_date_db = self._convert_date_format(end_date)
+        
+        cursor = self.connection.cursor()
+        try:
+            # 1. 获取指定日期范围内有榜单数据的所有日期
+            cursor.execute("""
+                SELECT DISTINCT date FROM daily_top30 
+                WHERE date >= ? AND date <= ? 
+                ORDER BY date
+            """, (start_date_db, end_date_db))
+            dates = [row[0] for row in cursor.fetchall()]
+            
+            if not dates:
+                return {
+                    'dates': [],
+                    'stocks': [],
+                    'total_days': 0
+                }
+            
+            # 2. 获取所有股票在这些日期的榜单数据
+            cursor.execute("""
+                SELECT ts_code, symbol, name, industry, date, rank, ten_day_change, daily_change
+                FROM daily_top30 
+                WHERE date IN ({seq})
+                ORDER BY date, rank
+            """.format(seq=','.join(['?'] * len(dates))), dates)
+            
+            rows = cursor.fetchall()
+            
+            # 3. 组织数据
+            stocks_data = {}
+            for row in rows:
+                ts_code = row[0]
+                if ts_code not in stocks_data:
+                    stocks_data[ts_code] = {
+                        'ts_code': row[0],
+                        'symbol': row[1],
+                        'name': row[2],
+                        'industry': row[3],
+                        'appearances': []  # 存储出现的日期、排名等信息
+                    }
+                stocks_data[ts_code]['appearances'].append({
+                    'date': self._convert_date_format(row[4]),
+                    'rank': row[5],
+                    'ten_day_change': row[6],
+                    'daily_change': row[7]
+                })
+            
+            # 4. 计算每只股票出现的天数，并按出现天数排序
+            result = []
+            for ts_code, data in stocks_data.items():
+                data['days_count'] = len(data['appearances'])
+                data['dates_list'] = [app['date'] for app in data['appearances']]
+                result.append(data)
+            
+            result.sort(key=lambda x: x['days_count'], reverse=True)
+            
+            # 转换日期格式为 YYYY-MM-DD
+            dates_formatted = [self._convert_date_format(d) for d in dates]
+            
+            return {
+                'dates': dates_formatted,
+                'stocks': result,
+                'total_days': len(dates)
+            }
+        finally:
+            cursor.close()
+    
+    def get_stocks_daily_change(self, ts_codes, start_date, end_date):
+        """
+        获取指定股票在指定日期范围内的每日涨幅数据
+        """
+        # 转换日期格式为 YYYYMMDD
+        start_date_db = self._convert_date_format(start_date)
+        end_date_db = self._convert_date_format(end_date)
+        
+        cursor = self.connection.cursor()
+        try:
+            # 先获取所有有数据的日期
+            cursor.execute("""
+                SELECT DISTINCT date FROM daily_change 
+                WHERE date >= ? AND date <= ? 
+                ORDER BY date
+            """, (start_date_db, end_date_db))
+            dates = [row[0] for row in cursor.fetchall()]
+            
+            if not dates:
+                return {
+                    'dates': [],
+                    'stocks_data': []
+                }
+            
+            # 获取指定股票的每日数据
+            placeholders = ','.join(['?'] * len(ts_codes))
+            cursor.execute("""
+                SELECT ts_code, symbol, name, industry, date, close, change
+                FROM daily_change 
+                WHERE ts_code IN ({placeholders}) AND date >= ? AND date <= ?
+                ORDER BY ts_code, date
+            """.format(placeholders=placeholders), (*ts_codes, start_date_db, end_date_db))
+            
+            rows = cursor.fetchall()
+            
+            # 组织数据
+            stocks_data = {}
+            for row in rows:
+                ts_code = row[0]
+                if ts_code not in stocks_data:
+                    stocks_data[ts_code] = {
+                        'ts_code': row[0],
+                        'symbol': row[1],
+                        'name': row[2],
+                        'industry': row[3],
+                        'daily_changes': {}  # key: date, value: {close, change}
+                    }
+                stocks_data[ts_code]['daily_changes'][row[4]] = {
+                    'close': row[5],
+                    'change': row[6]
+                }
+            
+            # 转换日期格式为 YYYY-MM-DD
+            dates_formatted = [self._convert_date_format(d) for d in dates]
+            
+            # 转换为列表，并补全所有日期的数据
+            result = []
+            for ts_code, data in stocks_data.items():
+                # 补全所有日期
+                complete_changes = []
+                for d in dates:
+                    change_data = data['daily_changes'].get(d, {'close': None, 'change': 0.0})
+                    complete_changes.append({
+                        'date': self._convert_date_format(d),
+                        'close': change_data['close'],
+                        'change': change_data['change']
+                    })
+                result.append({
+                    **data,
+                    'daily_changes': complete_changes
+                })
+            
+            return {
+                'dates': dates_formatted,
+                'stocks_data': result
+            }
         finally:
             cursor.close()

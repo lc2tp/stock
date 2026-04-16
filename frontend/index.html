@@ -1191,6 +1191,10 @@
                     <span class="nav-icon">📈</span>
                     <span>趋势统计</span>
                 </div>
+                <div class="nav-item" onclick="showPage('rank-analysis')">
+                    <span class="nav-icon">📊</span>
+                    <span>榜单分析</span>
+                </div>
             </div>
             <div class="nav-item dropdown" onclick="toggleSubmenu(this)">
                 <span class="nav-icon">🏭</span>
@@ -1205,6 +1209,10 @@
                 <div class="nav-item" onclick="showPage('concept-analysis')">
                     <span class="nav-icon">📊</span>
                     <span>周期累计分析</span>
+                </div>
+                <div class="nav-item" onclick="showPage('capital-flow')">
+                    <span class="nav-icon">💵</span>
+                    <span>资金流向</span>
                 </div>
             </div>
             <div class="nav-item dropdown" onclick="toggleSubmenu(this)">
@@ -1382,6 +1390,73 @@
                     </div>
                 </div>
                 <div id="jiuyang-content">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- 资金流向页面 -->
+        <div id="capital-flow-page" class="page">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-title-icon">💵</div>
+                        <span>资金流向</span>
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <button class="btn btn-small" onclick="refreshCapitalFlowData()" style="background: var(--primary-color); color: white;">
+                            🔄 刷新数据
+                        </button>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 16px; padding: 16px; background: var(--bg-secondary); border-radius: 8px; margin: 16px 0; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="color: var(--text-secondary); font-size: 14px;">连续天数：</label>
+                        <div class="period-selector" id="capital-flow-days-selector" style="gap: 6px;">
+                            <button class="period-btn active" data-days="2" onclick="setCapitalFlowDays(2)">2日</button>
+                            <button class="period-btn" data-days="3" onclick="setCapitalFlowDays(3)">3日</button>
+                            <button class="period-btn" data-days="4" onclick="setCapitalFlowDays(4)">4日</button>
+                            <button class="period-btn" data-days="5" onclick="setCapitalFlowDays(5)">5日</button>
+                            <button class="period-btn" data-days="6" onclick="setCapitalFlowDays(6)">6日</button>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="color: var(--text-secondary); font-size: 14px;">资金流向：</label>
+                        <select id="capital-flow-type" style="padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary);">
+                            <option value="inflow">连续流入</option>
+                            <option value="outflow">连续流出</option>
+                        </select>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="color: var(--text-secondary); font-size: 14px;">板块类型：</label>
+                        <select id="capital-flow-concept-type" style="padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); min-width: 150px;">
+                            <option value="">全部</option>
+                        </select>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label style="color: var(--text-secondary); font-size: 14px;">板块名称：</label>
+                        <input type="text" id="capital-flow-concept-name" placeholder="输入板块名称" style="padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); min-width: 150px;">
+                    </div>
+                    
+                    <button class="btn btn-small" onclick="loadCapitalFlowData()" style="background: var(--primary-color); color: white;">
+                        查询
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-title-icon">📋</div>
+                        <span id="capital-flow-title">连续资金流入板块</span>
+                    </div>
+                </div>
+                <div id="capital-flow-content">
                     <div class="loading">加载中...</div>
                 </div>
             </div>
@@ -1630,7 +1705,7 @@
                                         <span style="color: var(--text-muted);">0个涨停（红色背景）</span>
                                     </div>
                                     <div style="display: flex; align-items: center; gap: 8px;">
-                                        <span style="background: rgba(40,167,69,0.3); padding: 2px 8px; border-radius: 4px;">&gt;5家</span>
+                                        <span style="background: rgba(40,167,69,0.3); padding: 2px 8px; border-radius: 4px;">>5家</span>
                                         <span style="color: var(--text-muted);">超过5个涨停（绿色背景）</span>
                                     </div>
                                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -1639,7 +1714,7 @@
                                     </div>
                                     <div style="display: flex; align-items: center; gap: 8px;">
                                         <span style="font-size: 16px;">🟢</span>
-                                        <span style="color: var(--text-muted);">走强（今日涨停数 &gt; 昨日）</span>
+                                        <span style="color: var(--text-muted);">走强（今日涨停数 > 昨日）</span>
                                     </div>
                                     <div style="display: flex; align-items: center; gap: 8px;">
                                         <span style="font-size: 16px;">🟡</span>
@@ -1727,6 +1802,63 @@
                 </div>
             </div>
         </div>
+
+        <!-- 榜单分析页面 -->
+        <div id="rank-analysis-page" class="page">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-title-icon">📊</div>
+                        <span>榜单分析</span>
+                    </div>
+                </div>
+                
+                <div style="padding: 16px; background: var(--bg-secondary); border-radius: 8px; margin: 16px;">
+                    <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <label style="color: var(--text-secondary); font-size: 14px;">开始日期：</label>
+                            <input type="date" id="rank-start-date" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <label style="color: var(--text-secondary); font-size: 14px;">结束日期：</label>
+                            <input type="date" id="rank-end-date" style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary);">
+                        </div>
+                        <button class="btn" onclick="loadRankAnalysisData()" style="background: var(--primary-color); color: white;">
+                            🔍 查询
+                        </button>
+                        <button class="btn" onclick="clearSelectedRankStocks()" style="background: #6c757d; color: white;">
+                            清空选择
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 400px 1fr; gap: 24px; margin-top: 24px;">
+                <div class="card" style="margin: 0;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="card-title-icon">📋</div>
+                            <span>在榜股票 (<span id="rank-total-days">0</span>天)</span>
+                        </div>
+                    </div>
+                    <div id="rank-stocks-list" style="max-height: 600px; overflow-y: auto; padding: 8px;">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+                
+                <div class="card" style="margin: 0;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="card-title-icon">📈</div>
+                            <span>每日涨幅趋势</span>
+                        </div>
+                    </div>
+                    <div style="height: 600px;">
+                        <canvas id="rank-analysis-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script>
@@ -1807,7 +1939,7 @@
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             targetPage.classList.add('active');
             
-            if (event && event.target) {
+            if (event && event.target && typeof event.target.closest === "function") {
                 document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
                 const navItem = event.target.closest('.nav-item');
                 if (navItem) {
@@ -1836,6 +1968,9 @@
                 loadConceptData(10);
             } else if (page === 'concept-analysis') {
                 loadAnalysisData(1);
+            } else if (page === 'capital-flow') {
+                loadCapitalFlowTypes();
+                loadCapitalFlowData();
             } else if (page === 'jiuyang') {
                 // 重置选中状态
                 currentSelectedTheme = null;
@@ -1846,6 +1981,19 @@
                 // 个股题材页面，清空搜索结果
                 document.getElementById('stock-search').value = '';
                 document.getElementById('stock-theme-content').innerHTML = '';
+            } else if (page === 'rank-analysis') {
+                // 榜单分析页面，初始化
+                initRankAnalysisDates();
+                selectedRankStocks.clear();
+                rankAnalysisData = null;
+                if (rankAnalysisChart) {
+                    rankAnalysisChart.destroy();
+                    rankAnalysisChart = null;
+                }
+                const stocksList = document.getElementById('rank-stocks-list');
+                if (stocksList) {
+                    stocksList.innerHTML = '<div class="empty">请选择日期范围后点击查询</div>';
+                }
             }
         }
 
@@ -4646,7 +4794,483 @@
             `;
             content.innerHTML = html;
         }
+
+        // 资金流向 - 加载数据
+        async function loadCapitalFlowData() {
+            const content = document.getElementById('capital-flow-content');
+            if (!content) return;
+            
+            content.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const days = capitalFlowDays;
+                const flowTypeEl = document.getElementById('capital-flow-type');
+                const conceptTypeEl = document.getElementById('capital-flow-concept-type');
+                const titleEl = document.getElementById('capital-flow-title');
+                
+                if (!flowTypeEl || !conceptTypeEl || !titleEl) return;
+                
+                const flowType = flowTypeEl.value;
+                const conceptType = conceptTypeEl.value;
+                
+                titleEl.textContent = flowType === 'inflow' ? `连续${days}日资金流入板块` : `连续${days}日资金流出板块`;
+                
+                let url = `${API_BASE}/api/capital-flow/consecutive?days=${days}&flow_type=${flowType}`;
+                if (conceptType) {
+                    url += `&concept_type=${encodeURIComponent(conceptType)}`;
+                }
+                
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    // 重置排序状态
+                    capitalFlowSortColumn = null;
+                    capitalFlowSortOrder = 'desc';
+                    renderCapitalFlowData(result.data, days, flowType);
+                } else {
+                    content.innerHTML = '<div class="empty">暂无数据</div>';
+                }
+            } catch (error) {
+                console.error('加载资金流向数据失败:', error);
+                content.innerHTML = `<div class="message error">加载失败: ${error.message}</div>`;
+            }
+        }
         
+        // 资金流向 - 全局变量
+        let capitalFlowData = null;
+        let capitalFlowDates = [];
+        let capitalFlowDays = 2;
+        let capitalFlowSortColumn = null;
+        let capitalFlowSortOrder = 'desc';
+        
+        // 资金流向 - 设置天数
+        function setCapitalFlowDays(days) {
+            capitalFlowDays = days;
+            document.querySelectorAll('#capital-flow-days-selector .period-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (parseInt(btn.dataset.days) === days) {
+                    btn.classList.add('active');
+                }
+            });
+            loadCapitalFlowData();
+        }
+        
+        // 资金流向 - 排序
+        function sortCapitalFlowData(columnIndex, date = null) {
+            if (!capitalFlowData || !capitalFlowDates) return;
+            
+            if (date) {
+                if (capitalFlowSortColumn === date) {
+                    capitalFlowSortOrder = capitalFlowSortOrder === 'desc' ? 'asc' : 'desc';
+                } else {
+                    capitalFlowSortColumn = date;
+                    capitalFlowSortOrder = 'desc';
+                }
+                
+                capitalFlowData.sort((a, b) => {
+                    const flowA = a.daily_flows[date] || 0;
+                    const flowB = b.daily_flows[date] || 0;
+                    return capitalFlowSortOrder === 'desc' ? flowB - flowA : flowA - flowB;
+                });
+            } else if (columnIndex === 'total') {
+                if (capitalFlowSortColumn === 'total') {
+                    capitalFlowSortOrder = capitalFlowSortOrder === 'desc' ? 'asc' : 'desc';
+                } else {
+                    capitalFlowSortColumn = 'total';
+                    capitalFlowSortOrder = 'desc';
+                }
+                
+                capitalFlowData.sort((a, b) => {
+                    const flowA = a.total_net_inflow;
+                    const flowB = b.total_net_inflow;
+                    return capitalFlowSortOrder === 'desc' ? flowB - flowA : flowA - flowB;
+                });
+            }
+            
+            renderCapitalFlowData(capitalFlowData, capitalFlowDays, null);
+        }
+        
+        // 资金流向 - 渲染数据
+        function renderCapitalFlowData(data, days, flowType) {
+            const content = document.getElementById('capital-flow-content');
+            if (!content) return;
+            
+            // 保存数据用于排序
+            if (data && data.length > 0) {
+                capitalFlowData = [...data];
+                capitalFlowDates = Object.keys(data[0].daily_flows).sort().reverse();
+            }
+            
+            // 板块名称过滤
+            const conceptNameFilter = document.getElementById('capital-flow-concept-name');
+            let filteredData = data;
+            if (conceptNameFilter && conceptNameFilter.value) {
+                const filter = conceptNameFilter.value.trim().toLowerCase();
+                filteredData = data.filter(item => 
+                    item.concept_name && item.concept_name.toLowerCase().includes(filter)
+                );
+            }
+            
+            if (!filteredData || filteredData.length === 0) {
+                content.innerHTML = '<div class="empty">暂无数据</div>';
+                return;
+            }
+            
+            const dates = Object.keys(filteredData[0].daily_flows).sort().reverse();
+            
+            let html = `
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary);">
+                            <th style="padding: 12px; text-align: center; border-bottom: 1px solid var(--border-color); width: 60px; min-width: 60px;">排名</th>
+                            <th style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); min-width: 150px;">板块名称</th>
+                            <th style="padding: 12px; text-align: center; border-bottom: 1px solid var(--border-color); width: 140px; min-width: 140px;">板块类型</th>
+                            ${dates.map(d => {
+                                const isSorted = capitalFlowSortColumn === d;
+                                const arrow = isSorted ? (capitalFlowSortOrder === 'desc' ? ' ↓' : ' ↑') : '';
+                                return `<th style="padding: 12px; text-align: right; border-bottom: 1px solid var(--border-color); width: 130px; min-width: 130px; cursor: pointer; user-select: none;" onclick="sortCapitalFlowData(null, '${d}')">${d.slice(5)}${arrow}</th>`;
+                            }).join('')}
+                            <th style="padding: 12px; text-align: right; border-bottom: 1px solid var(--border-color); width: 160px; min-width: 160px; cursor: pointer; user-select: none;" onclick="sortCapitalFlowData('total')">累计净流入(亿元)${capitalFlowSortColumn === 'total' ? (capitalFlowSortOrder === 'desc' ? ' ↓' : ' ↑') : ''}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            filteredData.forEach((item, index) => {
+                const totalFlow = item.total_net_inflow / 100000000;
+                const flowColor = totalFlow > 0 ? '#dc3545' : '#28a745';
+                
+                html += `
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 12px; text-align: center; font-weight: 600;">${index + 1}</td>
+                        <td style="padding: 12px; font-weight: 500;">${item.concept_name}</td>
+                        <td style="padding: 12px; text-align: center; color: var(--text-muted);">${item.concept_type || '-'}</td>
+                        ${dates.map(d => {
+                            const flow = item.daily_flows[d] / 100000000;
+                            const color = flow > 0 ? '#dc3545' : '#28a745';
+                            const sign = flow > 0 ? '+' : '';
+                            return `<td style="padding: 12px; text-align: right; color: ${color}; font-weight: 500; font-family: 'Consolas', 'Monaco', monospace;">${sign}${flow.toFixed(2)}</td>`;
+                        }).join('')}
+                        <td style="padding: 12px; text-align: right; color: ${flowColor}; font-weight: 600; font-size: 15px; font-family: 'Consolas', 'Monaco', monospace;">
+                            ${totalFlow > 0 ? '+' : ''}${totalFlow.toFixed(2)}
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+            content.innerHTML = html;
+        }
+
+        // 资金流向 - 加载板块类型
+        async function loadCapitalFlowTypes() {
+            try {
+                const select = document.getElementById('capital-flow-concept-type');
+                if (!select) return;
+                
+                const response = await fetch(`${API_BASE}/api/capital-flow/types`);
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    select.innerHTML = '<option value="">全部</option>';
+                    result.data.forEach(type => {
+                        select.innerHTML += `<option value="${type}">${type}</option>`;
+                    });
+                }
+            } catch (error) {
+                console.error('加载板块类型失败:', error);
+            }
+        }
+        
+        // 资金流向 - 刷新数据
+        async function refreshCapitalFlowData() {
+            try {
+                const response = await fetch(`${API_BASE}/api/capital-flow/refresh`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(result.message);
+                    await loadCapitalFlowTypes();
+                    loadCapitalFlowData();
+                } else {
+                    alert('刷新失败: ' + result.message);
+                }
+            } catch (error) {
+                console.error('刷新失败:', error);
+                alert('刷新失败: ' + error.message);
+            }
+        }
+
+        // 榜单分析 - 全局变量
+        let rankAnalysisData = null;
+        let rankAnalysisDates = [];
+        let selectedRankStocks = new Set();
+        let rankAnalysisChart = null;
+
+        // 榜单分析 - 初始化日期选择器
+        async function initRankAnalysisDates() {
+            try {
+                const response = await fetch(`${API_BASE}/api/rank-analysis/dates`);
+                const result = await response.json();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    const dates = result.data;
+                    const endDateEl = document.getElementById('rank-end-date');
+                    const startDateEl = document.getElementById('rank-start-date');
+                    
+                    if (endDateEl) {
+                        endDateEl.value = dates[0];
+                    }
+                    if (startDateEl && dates.length > 1) {
+                        startDateEl.value = dates[Math.min(14, dates.length - 1)];
+                    }
+                }
+            } catch (error) {
+                console.error('初始化日期失败:', error);
+            }
+        }
+
+        // 榜单分析 - 加载数据
+        async function loadRankAnalysisData() {
+            const startDate = document.getElementById('rank-start-date');
+            const endDate = document.getElementById('rank-end-date');
+            const content = document.getElementById('rank-stocks-list');
+            
+            if (!startDate || !endDate || !content) return;
+            
+            const startDateVal = startDate.value;
+            const endDateVal = endDate.value;
+            
+            if (!startDateVal || !endDateVal) {
+                alert('请选择开始和结束日期');
+                return;
+            }
+
+            content.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/rank-analysis/stocks?start_date=${startDateVal}&end_date=${endDateVal}`);
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    rankAnalysisData = result.data.stocks;
+                    rankAnalysisDates = result.data.dates;
+                    const totalDaysEl = document.getElementById('rank-total-days');
+                    if (totalDaysEl) {
+                        totalDaysEl.textContent = result.data.total_days;
+                    }
+                    renderRankStocksList();
+                } else {
+                    content.innerHTML = '<div class="empty">暂无数据</div>';
+                }
+            } catch (error) {
+                console.error('加载榜单数据失败:', error);
+                content.innerHTML = `<div class="message error">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        // 榜单分析 - 渲染股票列表
+        function renderRankStocksList() {
+            const content = document.getElementById('rank-stocks-list');
+            if (!content) return;
+            
+            if (!rankAnalysisData || rankAnalysisData.length === 0) {
+                content.innerHTML = '<div class="empty">暂无数据</div>';
+                return;
+            }
+            
+            let html = '';
+            rankAnalysisData.forEach((stock, index) => {
+                const isSelected = selectedRankStocks.has(stock.ts_code);
+                const bgColor = isSelected ? 'var(--primary-color)' : 'var(--bg-primary)';
+                const textColor = isSelected ? 'white' : 'var(--text-primary)';
+                const borderColor = isSelected ? 'var(--primary-color)' : 'var(--border-color)';
+                
+                html += `
+                    <div style="
+                        padding: 10px 12px;
+                        margin-bottom: 8px;
+                        background: ${bgColor};
+                        border: 1px solid ${borderColor};
+                        border-radius: 6px;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        color: ${textColor};
+                    " onclick="toggleRankStockSelection('${stock.ts_code}')">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: 600;">${stock.name}</div>
+                                <div style="font-size: 12px; color: ${isSelected ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)'};">
+                                    ${stock.symbol} | ${stock.industry || '-'}
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; font-size: 16px;">${stock.days_count}天</div>
+                                <div style="font-size: 12px; color: ${isSelected ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)'};">
+                                    在榜天数
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            content.innerHTML = html;
+            
+            // 如果有选中的股票，加载趋势图
+            if (selectedRankStocks.size > 0) {
+                loadRankAnalysisChart();
+            }
+        }
+
+        // 榜单分析 - 切换股票选中状态
+        function toggleRankStockSelection(tsCode) {
+            if (selectedRankStocks.has(tsCode)) {
+                selectedRankStocks.delete(tsCode);
+            } else {
+                selectedRankStocks.add(tsCode);
+            }
+            
+            renderRankStocksList();
+            
+            if (selectedRankStocks.size > 0) {
+                loadRankAnalysisChart();
+            } else if (rankAnalysisChart) {
+                rankAnalysisChart.destroy();
+                rankAnalysisChart = null;
+            }
+        }
+
+        // 榜单分析 - 清空选择
+        function clearSelectedRankStocks() {
+            selectedRankStocks.clear();
+            renderRankStocksList();
+            if (rankAnalysisChart) {
+                rankAnalysisChart.destroy();
+                rankAnalysisChart = null;
+            }
+        }
+
+        // 榜单分析 - 加载趋势图
+        async function loadRankAnalysisChart() {
+            if (selectedRankStocks.size === 0) {
+                return;
+            }
+
+            const startDateEl = document.getElementById('rank-start-date');
+            const endDateEl = document.getElementById('rank-end-date');
+            
+            if (!startDateEl || !endDateEl) return;
+            
+            const startDate = startDateEl.value;
+            const endDate = endDateEl.value;
+            const tsCodes = Array.from(selectedRankStocks).join(',');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/rank-analysis/daily-changes?ts_codes=${tsCodes}&start_date=${startDate}&end_date=${endDate}`);
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    renderRankAnalysisChart(result.data);
+                }
+            } catch (error) {
+                console.error('加载趋势数据失败:', error);
+            }
+        }
+
+        // 榜单分析 - 渲染趋势图
+        function renderRankAnalysisChart(data) {
+            const canvas = document.getElementById('rank-analysis-chart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            
+            if (rankAnalysisChart) {
+                rankAnalysisChart.destroy();
+            }
+            
+            const colors = [
+                '#007bff', '#28a745', '#dc3545', '#ffc107', '#17a2b8',
+                '#6610f2', '#e83e8c', '#fd7e14', '#6f42c1', '#20c997'
+            ];
+            
+            const datasets = data.stocks_data.map((stock, index) => ({
+                label: stock.name,
+                data: stock.daily_changes.map(d => d.change),
+                borderColor: colors[index % colors.length],
+                backgroundColor: colors[index % colors.length] + '20',
+                borderWidth: 2,
+                fill: false,
+                tension: 0.3,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }));
+            
+            rankAnalysisChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.dates.map(d => d.slice(5)),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#f7fafc',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: '每日涨幅趋势',
+                            color: '#f7fafc',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: '涨幅(%)',
+                                color: '#f7fafc'
+                            },
+                            ticks: {
+                                color: '#f7fafc'
+                            },
+                            grid: {
+                                color: 'rgba(255,255,255,0.1)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '日期',
+                                color: '#f7fafc'
+                            },
+                            ticks: {
+                                color: '#f7fafc'
+                            },
+                            grid: {
+                                color: 'rgba(255,255,255,0.1)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
         // 页面初始化
         document.addEventListener('DOMContentLoaded', function() {
             // 检查当前激活的页面
