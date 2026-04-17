@@ -4026,10 +4026,16 @@
         
         // 板块分析 - 刷新数据
         async function refreshConceptData() {
+            const button = document.querySelector('button[onclick="refreshConceptData()"]');
+            const originalText = button.innerHTML;
             const content = document.getElementById('concept-content');
-            content.innerHTML = '<div class="loading">正在同步数据...</div>';
             
             try {
+                // 显示加载中
+                button.disabled = true;
+                button.innerHTML = '⏳ 同步中...';
+                content.innerHTML = '<div class="loading">正在同步数据...</div>';
+                
                 const response = await fetch(`${API_BASE}/api/concept/refresh`);
                 const result = await response.json();
                 
@@ -4042,6 +4048,10 @@
             } catch (error) {
                 console.error('同步板块数据失败:', error);
                 content.innerHTML = '<div class="message error">同步板块数据失败，请重试</div>';
+            } finally {
+                // 恢复按钮状态
+                button.disabled = false;
+                button.innerHTML = originalText;
             }
         }
         
@@ -5053,20 +5063,31 @@
         
         // 资金流向 - 刷新数据
         async function refreshCapitalFlowData() {
+            const button = document.querySelector('button[onclick="refreshCapitalFlowData()"]');
+            const originalText = button.innerHTML;
+            
             try {
+                // 显示加载中
+                button.disabled = true;
+                button.innerHTML = '⏳ 刷新中...';
+                
                 const response = await fetch(`${API_BASE}/api/capital-flow/refresh`);
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert(result.message);
+                    alert('✅ ' + result.message);
                     await loadCapitalFlowTypes();
                     loadCapitalFlowData();
                 } else {
-                    alert('刷新失败: ' + result.message);
+                    alert('❌ 刷新失败: ' + result.message);
                 }
             } catch (error) {
                 console.error('刷新失败:', error);
-                alert('刷新失败: ' + error.message);
+                alert('❌ 刷新失败: ' + error.message);
+            } finally {
+                // 恢复按钮状态
+                button.disabled = false;
+                button.innerHTML = originalText;
             }
         }
 
@@ -5234,7 +5255,14 @@
         
         // 个股资金流向 - 刷新数据
         async function refreshStockCapitalFlowData() {
+            const button = document.querySelector('button[onclick="refreshStockCapitalFlowData()"]');
+            const originalText = button.innerHTML;
+            
             try {
+                // 显示加载中
+                button.disabled = true;
+                button.innerHTML = '⏳ 刷新中...';
+                
                 // 先获取日期列表，拿到最后一个交易日
                 const datesResponse = await fetch(`${API_BASE}/api/stock-capital-flow/dates`);
                 const datesResult = await datesResponse.json();
@@ -5250,14 +5278,18 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert(result.message);
+                    alert('✅ ' + result.message);
                     loadStockCapitalFlowData();
                 } else {
-                    alert('刷新失败: ' + result.message);
+                    alert('❌ 刷新失败: ' + result.message);
                 }
             } catch (error) {
                 console.error('刷新失败:', error);
-                alert('刷新失败: ' + error.message);
+                alert('❌ 刷新失败: ' + error.message);
+            } finally {
+                // 恢复按钮状态
+                button.disabled = false;
+                button.innerHTML = originalText;
             }
         }
 
