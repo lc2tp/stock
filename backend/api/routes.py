@@ -463,37 +463,78 @@ def get_tushare_top30(date: str = None):
         return {"success": False, "message": f"获取数据失败: {str(e)}"}
 
 @router.get("/api/tushare/rank-change")
-def get_rank_change(current_date: str = None, previous_date: str = None):
+def get_rank_change(current_date: str = None):
     try:
         if not current_date:
             current_date = date.today().strftime('%Y%m%d')
-        if not previous_date:
-            previous_date = (date.today() - timedelta(days=1)).strftime('%Y%m%d')
         
-        # 直接调用calculate_ten_day_top30计算数据，确保与ten-day-top30接口数据一致
-        current_top30 = get_tushare_service().calculate_ten_day_top30(current_date)
-        previous_top30 = get_tushare_service().calculate_ten_day_top30(previous_date)
+        def to_db_date(date_str):
+            if len(date_str) == 10 and '-' in date_str:
+                return date_str.replace('-', '')
+            return date_str
         
-        # 计算排名变化
-        current_rank = {stock['ts_code']: i+1 for i, stock in enumerate(current_top30)}
-        previous_rank = {stock['ts_code']: i+1 for i, stock in enumerate(previous_top30)}
+        current_date_db = to_db_date(current_date)
         
-        rank_change = []
-        for stock in current_top30:
-            ts_code = stock['ts_code']
-            current_r = current_rank.get(ts_code, 999)
-            previous_r = previous_rank.get(ts_code, 999)
-            rank_change_value = previous_r - current_r if previous_r != 999 else 'NEW'
+        db = Database()
+        if not db.connect():
+            return {"success": False, "message": "数据库连接失败"}
+        
+        try:
+            cursor = db.connection.cursor()
             
-            rank_change.append({
-                **stock,
-                'current_rank': current_r,
-                'previous_rank': previous_r,
-                'rank_change': rank_change_value
-            })
-        
-        return {"success": True, "data": rank_change, "current_date": current_date, "previous_date": previous_date}
+            cursor.execute('''
+                SELECT DISTINCT date 
+                FROM daily_change 
+                WHERE date <= ? 
+                ORDER BY date DESC 
+                LIMIT 2
+            ''', (current_date_db,))
+            
+            dates_result = cursor.fetchall()
+            cursor.close()
+            
+            if not dates_result or len(dates_result) < 2:
+                return {"success": False, "message": "数据不足，无法计算排名变化"}
+            
+            current_trade_date = dates_result[0][0]
+            previous_trade_date = dates_result[1][0]
+            
+            print(f"计算排名变化: 当天={current_trade_date}, 前一交易日={previous_trade_date}")
+            
+            current_top30 = get_tushare_service().calculate_top30(current_trade_date, days=10)
+            previous_top30 = get_tushare_service().calculate_top30(previous_trade_date, days=10)
+            
+            current_rank = {stock['ts_code']: i+1 for i, stock in enumerate(current_top30)}
+            previous_rank = {stock['ts_code']: i+1 for i, stock in enumerate(previous_top30)}
+            
+            rank_change = []
+            for stock in current_top30:
+                ts_code = stock['ts_code']
+                current_r = current_rank.get(ts_code, 999)
+                previous_r = previous_rank.get(ts_code, 999)
+                
+                if previous_r == 999:
+                    rank_change_value = 'NEW'
+                else:
+                    rank_change_value = previous_r - current_r
+                
+                stock_copy = stock.copy()
+                if 'cumulative_change' in stock_copy:
+                    stock_copy['ten_day_change'] = stock_copy['cumulative_change']
+                
+                rank_change.append({
+                    **stock_copy,
+                    'current_rank': current_r,
+                    'previous_rank': previous_r,
+                    'rank_change': rank_change_value
+                })
+            
+            return {"success": True, "data": rank_change, "current_date": current_trade_date, "previous_date": previous_trade_date}
+        finally:
+            db.close()
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return {"success": False, "message": f"获取排名变化失败: {str(e)}"}
 
 @router.get("/api/tushare/ten-day-top30")
@@ -521,11 +562,121 @@ def get_historical_data_api(date: str):
 @router.get("/api/concept/refresh")
 def refresh_concept_data():
     try:
-        from datetime import date
-        today = date.today()
+        import pywencai
+        import re
+        from datetime import datetime, date
+        from models.database import Database
         
-        return {"success": True, "message": "数据已存在，无需刷新"}
+        today = date.today()
+        today_str = today.strftime('%Y%m%d')
+        query_date = today.strftime('%Y-%m-%d')
+        
+        print(f"=== 开始获取板块数据: {today_str} ===")
+        
+        db = Database()
+        if not db.connect():
+            return {"success": False, "message": "数据库连接失败"}
+        
+        try:
+            cursor = db.connection.cursor()
+            
+            print(f"正在用 pywencai 获取 {query_date} 的板块数据...")
+            
+            df = pywencai.get(
+                query=f'同花顺板块{query_date}涨幅排名',
+                query_type='zhishu',
+                loop=True,
+                log=True
+            )
+            
+            if df is None or len(df) == 0:
+                return {"success": False, "message": "获取板块数据失败，请稍后再试"}
+            
+            print(f"成功获取 {len(df)} 个板块数据")
+            print(f"列名: {df.columns.tolist()}")
+            
+            close_col = None
+            change_col = None
+            for col in df.columns:
+                if '收盘价' in col and today_str in col:
+                    close_col = col
+                if '涨跌幅' in col and today_str in col and '排名' not in col:
+                    change_col = col
+            
+            print(f"收盘价列: {close_col}")
+            print(f"涨跌幅列: {change_col}")
+            
+            all_concepts = {}
+            
+            for idx, row in df.iterrows():
+                code = str(row.get('code', ''))
+                name = str(row.get('指数简称', ''))
+                
+                concept_type = '同花顺板块指数'
+                if '指数@同花顺板块指数' in row:
+                    type_val = str(row.get('指数@同花顺板块指数', ''))
+                    if type_val and type_val != 'nan':
+                        concept_type = type_val
+                
+                all_concepts[code] = {
+                    'name': name,
+                    'type': concept_type
+                }
+                
+                cursor.execute(
+                    "INSERT OR REPLACE INTO concept (concept_code, concept_name, concept_type) VALUES (?, ?, ?)",
+                    (code, name, concept_type)
+                )
+            
+            print(f"已保存 {len(all_concepts)} 个板块信息")
+            
+            print(f"正在解析指数数据...")
+            saved_count = 0
+            for idx, row in df.iterrows():
+                code = str(row.get('code', ''))
+                
+                close = 0.0
+                change_pct = 0.0
+                
+                if close_col:
+                    close_val = row.get(close_col, '0')
+                    try:
+                        close = float(close_val)
+                    except:
+                        close = 0.0
+                
+                if change_col:
+                    change_val = row.get(change_col, '0')
+                    try:
+                        change_pct = float(change_val)
+                    except:
+                        change_pct = 0.0
+                
+                volume = 0.0
+                amount = 0.0
+                
+                if idx < 5:
+                    print(f"板块 {code}: close={close} (类型: {type(close)}), change={change_pct} (类型: {type(change_pct)})")
+                
+                try:
+                    db.insert_concept_daily(code, today_str, close, change_pct, volume, amount)
+                    saved_count += 1
+                except Exception as e:
+                    print(f"  保存 {code} 失败: {e}")
+            
+            print(f"已成功保存 {saved_count} 条板块数据")
+            
+            db.connection.commit()
+            print(f"=== 板块数据获取完成 ===")
+            
+            return {"success": True, "message": f"{today_str} 板块数据同步成功！共保存 {saved_count} 个板块"}
+            
+        finally:
+            db.close()
+            
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return {"success": False, "message": f"同步失败: {str(e)}"}
 
 @router.get("/api/concept/data")
@@ -561,9 +712,11 @@ def get_concept_data(days: int = Query(10, ge=2, le=10)):
                         'concept_name': item['concept_name'],
                         'concept_type': item.get('concept_type', ''),
                         'daily_change': {},
+                        'daily_close': {},
                         'daily_volume': {}
                     }
                 concept_data[code]['daily_change'][item['date']] = item['change_pct']
+                concept_data[code]['daily_close'][item['date']] = item['close']
                 concept_data[code]['daily_volume'][item['date']] = item.get('volume', 0.0)
             
             result = []
@@ -573,46 +726,55 @@ def get_concept_data(days: int = Query(10, ge=2, le=10)):
                 if not ('概念' in concept_type or '行业' in concept_type):
                     continue
                 
-                cumulative_change = 1.0
-                valid_days = 0
-                
+                # 使用收盘价计算区间涨跌幅（与同花顺一致）
+                valid_close_dates = []
                 for d in sorted_dates:
-                    if d in data['daily_change']:
-                        change_pct = data['daily_change'][d]
-                        cumulative_change *= (1 + change_pct / 100)
-                        valid_days += 1
+                    if d in data['daily_close']:
+                        close_val = data['daily_close'][d]
+                        if close_val is not None and close_val > 0:
+                            valid_close_dates.append((d, close_val))
                 
-                # 只要有1天以上数据就算有效
-                if valid_days >= 1:
-                    cumulative_change_pct = (cumulative_change - 1) * 100
+                cumulative_change_pct = 0.0
+                if len(valid_close_dates) >= 2:
+                    # 找到区间起始收盘和结束收盘
+                    # 结束收盘：最新日期的收盘价
+                    end_date, end_close = valid_close_dates[-1]
                     
-                    # 获取今日涨幅和成交额
-                    today_change = 0.0
+                    # 起始收盘：区间最早日期的收盘价
+                    # 因为区间涨跌幅是从区间第一天到最后一天的变化
+                    # 例如5日区间是第1天到第5天，所以用第一天的收盘作为起始
+                    start_date, start_close = valid_close_dates[0]
+                    
+                    if start_close is not None and end_close is not None and start_close > 0:
+                        cumulative_change_pct = ((end_close - start_close) / start_close) * 100
+                
+                # 获取今日涨幅和成交额
+                today_change = 0.0
+                today_volume = 0.0
+                
+                # 1. today_change：用最新日期的change
+                if concept_dates and concept_dates[0] in data['daily_change']:
+                    today_change = data['daily_change'][concept_dates[0]]
+                
+                # 2. today_volume：优先用最新日期的volume，没有就找最近的
+                if concept_dates:
+                    for d in concept_dates:
+                        if d in data['daily_volume'] and data['daily_volume'][d] is not None:
+                            today_volume = data['daily_volume'][d]
+                            break
+                
+                # 确保永远不是 None
+                if today_volume is None:
                     today_volume = 0.0
-                    
-                    # 1. today_change：用最新日期的change
-                    if concept_dates and concept_dates[0] in data['daily_change']:
-                        today_change = data['daily_change'][concept_dates[0]]
-                    
-                    # 2. today_volume：优先用最新日期的volume，没有就找最近的
-                    if concept_dates:
-                        for d in concept_dates:
-                            if d in data['daily_volume'] and data['daily_volume'][d] is not None:
-                                today_volume = data['daily_volume'][d]
-                                break
-                    
-                    # 确保永远不是 None
-                    if today_volume is None:
-                        today_volume = 0.0
-                    
-                    result.append({
-                        'concept_code': code,
-                        'concept_name': data['concept_name'],
-                        'concept_type': data.get('concept_type', ''),
-                        'cumulative_change': cumulative_change_pct,
-                        'today_change': today_change,
-                        'today_volume': today_volume
-                    })
+                
+                result.append({
+                    'concept_code': code,
+                    'concept_name': data['concept_name'],
+                    'concept_type': data.get('concept_type', ''),
+                    'cumulative_change': cumulative_change_pct,
+                    'today_change': today_change,
+                    'today_volume': today_volume
+                })
             
             result.sort(key=lambda x: x['cumulative_change'], reverse=True)
             
@@ -1024,6 +1186,70 @@ def refresh_capital_flow(date: str = Query(None)):
             return {"success": True, "message": f"{date} 资金流向数据刷新成功"}
         else:
             return {"success": False, "message": f"{date} 资金流向数据刷新失败"}
+    except Exception as e:
+        return {"success": False, "message": f"刷新失败: {str(e)}"}
+
+
+@router.get("/api/stock-capital-flow/dates")
+def get_stock_capital_flow_dates():
+    """
+    获取个股资金流向日期列表
+    """
+    try:
+        from models.database import Database
+        db = Database()
+        if not db.connect():
+            return {"success": False, "message": "数据库连接失败"}
+        
+        try:
+            dates = db.get_stock_capital_flow_dates()
+            return {"success": True, "data": dates}
+        finally:
+            db.close()
+    except Exception as e:
+        return {"success": False, "message": f"获取日期列表失败: {str(e)}"}
+
+
+@router.get("/api/stock-capital-flow/consecutive")
+def get_consecutive_stock_capital_flow(days: int = 2, flow_type: str = 'inflow'):
+    """
+    获取连续N日资金流入/流出的个股
+    days: 连续天数（2-6）
+    flow_type: 'inflow' 连续流入，'outflow' 连续流出
+    """
+    try:
+        from services.stock_capital_flow_service import calculate_consecutive_stock_capital_flow
+        
+        if days < 2 or days > 6:
+            return {"success": False, "message": "天数必须在2-6之间"}
+        
+        if flow_type not in ['inflow', 'outflow']:
+            return {"success": False, "message": "flow_type必须是inflow或outflow"}
+        
+        data = calculate_consecutive_stock_capital_flow(days, flow_type)
+        return {"success": True, "data": data}
+    except Exception as e:
+        return {"success": False, "message": f"查询失败: {str(e)}"}
+
+
+@router.get("/api/stock-capital-flow/refresh")
+def refresh_stock_capital_flow(date: str = Query(None)):
+    """
+    刷新个股资金流向数据
+    """
+    try:
+        from services.stock_capital_flow_service import fetch_and_save_stock_capital_flow
+        from datetime import datetime
+        
+        if not date:
+            date = datetime.now().strftime("%Y-%m-%d")
+        
+        success = fetch_and_save_stock_capital_flow(date)
+        
+        if success:
+            return {"success": True, "message": f"{date} 个股资金流向数据刷新成功"}
+        else:
+            return {"success": False, "message": f"{date} 个股资金流向数据刷新失败"}
     except Exception as e:
         return {"success": False, "message": f"刷新失败: {str(e)}"}
 

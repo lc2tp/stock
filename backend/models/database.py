@@ -193,6 +193,21 @@ class Database:
         )
         """
         
+        # 创建个股资金流向表
+        create_stock_capital_flow_table = """
+        CREATE TABLE IF NOT EXISTS stock_capital_flow (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ts_code TEXT NOT NULL,
+            symbol TEXT NOT NULL,
+            name TEXT NOT NULL,
+            date TEXT NOT NULL,
+            main_capital_flow REAL,
+            change_percent REAL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(ts_code, date)
+        )
+        """
+        
         # 执行创建表语句
         try:
             cursor.execute(create_theme_table)
@@ -205,6 +220,7 @@ class Database:
             cursor.execute(create_jiuyang_theme_table)
             cursor.execute(create_jiuyang_stock_action_table)
             cursor.execute(create_concept_capital_flow_table)
+            cursor.execute(create_stock_capital_flow_table)
             self.connection.commit()
             print("数据库表创建成功")
         except Exception as e:
@@ -694,6 +710,61 @@ class Database:
         cursor = self.connection.cursor()
         try:
             cursor.execute("SELECT DISTINCT concept_type FROM concept_capital_flow WHERE concept_type IS NOT NULL AND concept_type != '' ORDER BY concept_type")
+            results = cursor.fetchall()
+            return [row[0] for row in results]
+        finally:
+            cursor.close()
+    
+    def insert_stock_capital_flow(self, ts_code, symbol, name, date, main_capital_flow, change_percent):
+        """
+        插入个股资金流向数据
+        """
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute(
+                "INSERT OR REPLACE INTO stock_capital_flow (ts_code, symbol, name, date, main_capital_flow, change_percent) VALUES (?, ?, ?, ?, ?, ?)",
+                (ts_code, symbol, name, date, main_capital_flow, change_percent)
+            )
+            self.connection.commit()
+        finally:
+            cursor.close()
+    
+    def get_stock_capital_flow(self, start_date, end_date):
+        """
+        获取指定日期范围内的个股资金流向数据
+        """
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute(
+                """
+                SELECT ts_code, symbol, name, date, main_capital_flow, change_percent
+                FROM stock_capital_flow
+                WHERE date BETWEEN ? AND ?
+                ORDER BY date DESC, main_capital_flow DESC
+                """,
+                (start_date, end_date)
+            )
+            results = []
+            for row in cursor.fetchall():
+                results.append({
+                    'ts_code': row[0],
+                    'symbol': row[1],
+                    'name': row[2],
+                    'date': row[3],
+                    'main_capital_flow': row[4],
+                    'change_percent': row[5]
+                })
+            return results
+        finally:
+            cursor.close()
+    
+    def get_stock_capital_flow_dates(self):
+        """
+        获取所有有个股资金流向数据的日期列表
+        """
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute("SELECT DISTINCT date FROM stock_capital_flow ORDER BY date DESC")
             results = cursor.fetchall()
             return [row[0] for row in results]
         finally:
