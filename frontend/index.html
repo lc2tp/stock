@@ -1765,6 +1765,9 @@
                         <span>题材详细数据</span>
                     </div>
                     <div style="display: flex; gap: 12px; align-items: center;">
+                        <button class="btn btn-small" style="background: #28a745;" onclick="downloadThemeTableAsImage()">
+                            📥 下载图片
+                        </button>
                         <div style="position: relative;">
                             <button class="btn btn-small" style="background: #ffa500;" onclick="toggleLegendTooltip(event)">
                                 📖 图例说明
@@ -1860,6 +1863,7 @@
                     gap: 8px;
                 "></div>
                 <div id="theme-change-content" style="overflow-x: auto;"></div>
+                <div id="theme-table-container" style="display: none;"></div>
             </div>
         </div>
 
@@ -4450,6 +4454,65 @@
             const tooltip = document.getElementById('legend-tooltip');
             if (tooltip) {
                 tooltip.style.display = tooltip.style.display === 'block' ? 'none' : 'block';
+            }
+        }
+        
+        // 下载题材表格为图片
+        async function downloadThemeTableAsImage() {
+            const content = document.getElementById('theme-change-content');
+            const table = content.querySelector('table');
+            
+            if (!table) {
+                alert('暂无表格数据可下载');
+                return;
+            }
+            
+            const originalStyle = content.getAttribute('style') || '';
+            const container = document.getElementById('theme-table-container');
+            container.innerHTML = '';
+            
+            const scale = 0.6;
+            const tempDiv = document.createElement('div');
+            tempDiv.style.cssText = `
+                background: #0a0e1a;
+                padding: 20px;
+                font-family: 'Inter', 'Noto Sans SC', sans-serif;
+                color: #f7fafc;
+                transform: scale(${scale});
+                transform-origin: top left;
+                width: fit-content;
+            `;
+            
+            const tableClone = table.cloneNode(true);
+            tableClone.style.width = '100%';
+            tableClone.style.tableLayout = 'fixed';
+            tableClone.style.borderCollapse = 'collapse';
+            
+            tempDiv.appendChild(tableClone);
+            container.appendChild(tempDiv);
+            
+            container.style.display = 'block';
+            
+            try {
+                const canvas = await html2canvas(tempDiv, {
+                    backgroundColor: '#0a0e1a',
+                    scale: 2,
+                    useCORS: true,
+                    logging: false
+                });
+                
+                const link = document.createElement('a');
+                link.download = `题材详细数据_${new Date().toISOString().split('T')[0]}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                alert('✅ 图片下载成功！');
+            } catch (error) {
+                console.error('下载失败:', error);
+                alert('❌ 下载失败: ' + error.message);
+            } finally {
+                container.style.display = 'none';
+                container.innerHTML = '';
             }
         }
         
