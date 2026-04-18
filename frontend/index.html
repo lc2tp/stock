@@ -1766,7 +1766,7 @@
                     </div>
                     <div style="display: flex; gap: 12px; align-items: center;">
                         <div style="position: relative;">
-                            <button class="btn btn-small" style="background: #ffa500;">
+                            <button class="btn btn-small" style="background: #ffa500;" onclick="toggleLegendTooltip(event)">
                                 📖 图例说明
                             </button>
                             <div style="
@@ -4440,6 +4440,15 @@
         let themeChangeGlobalDates = [];
         let selectedThemes = new Set();
         
+        // 切换图例说明显示
+        function toggleLegendTooltip(e) {
+            e.stopPropagation();
+            const tooltip = document.getElementById('legend-tooltip');
+            if (tooltip) {
+                tooltip.style.display = tooltip.style.display === 'block' ? 'none' : 'block';
+            }
+        }
+        
         // 题材变化 - 加载数据
         async function loadThemeChangeData() {
             const content = document.getElementById('theme-change-content');
@@ -4462,26 +4471,6 @@
                     renderThemeSelector(result.data);
                     renderThemeChangeChart(getSelectedData(result.data), result.dates);
                     renderThemeChangeTable(getSelectedData(result.data), result.dates);
-                    
-                    // 添加图例说明的点击事件
-                    const legendBtn = document.querySelector('#theme-change-page .card-header button');
-                    if (legendBtn) {
-                        legendBtn.addEventListener('click', function(e) {
-                            e.stopPropagation();
-                            const tooltip = document.getElementById('legend-tooltip');
-                            if (tooltip) {
-                                tooltip.style.display = tooltip.style.display === 'block' ? 'none' : 'block';
-                            }
-                        });
-                    }
-                    
-                    // 点击其他地方关闭图例
-                    document.addEventListener('click', function() {
-                        const tooltip = document.getElementById('legend-tooltip');
-                        if (tooltip) {
-                            tooltip.style.display = 'none';
-                        }
-                    });
                 } else {
                     content.innerHTML = '<div class="empty">暂无数据</div>';
                 }
@@ -5753,6 +5742,17 @@
                     loadJiuyangDates();
                 }
             }
+            
+            // 点击其他地方关闭图例说明
+            document.addEventListener('click', function(e) {
+                const tooltip = document.getElementById('legend-tooltip');
+                const legendBtn = document.querySelector('button[onclick="toggleLegendTooltip(event)"]');
+                if (tooltip && legendBtn) {
+                    if (!legendBtn.contains(e.target) && !tooltip.contains(e.target)) {
+                        tooltip.style.display = 'none';
+                    }
+                }
+            });
         });
     </script>
 </body>
