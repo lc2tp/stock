@@ -463,7 +463,7 @@ def get_tushare_top30(date: str = None):
         return {"success": False, "message": f"获取数据失败: {str(e)}"}
 
 @router.get("/api/tushare/rank-change")
-def get_rank_change(current_date: str = None):
+def get_rank_change(current_date: str = None, limit: int = Query(30, ge=1, le=200)):
     try:
         if not current_date:
             current_date = date.today().strftime('%Y%m%d')
@@ -499,16 +499,16 @@ def get_rank_change(current_date: str = None):
             current_trade_date = dates_result[0][0]
             previous_trade_date = dates_result[1][0]
             
-            print(f"计算排名变化: 当天={current_trade_date}, 前一交易日={previous_trade_date}")
+            print(f"计算排名变化: 当天={current_trade_date}, 前一交易日={previous_trade_date}, limit={limit}")
             
-            current_top30 = get_tushare_service().calculate_top30(current_trade_date, days=10)
-            previous_top30 = get_tushare_service().calculate_top30(previous_trade_date, days=10)
+            current_top = get_tushare_service().calculate_top30(current_trade_date, days=10, limit=limit)
+            previous_top = get_tushare_service().calculate_top30(previous_trade_date, days=10, limit=limit)
             
-            current_rank = {stock['ts_code']: i+1 for i, stock in enumerate(current_top30)}
-            previous_rank = {stock['ts_code']: i+1 for i, stock in enumerate(previous_top30)}
+            current_rank = {stock['ts_code']: i+1 for i, stock in enumerate(current_top)}
+            previous_rank = {stock['ts_code']: i+1 for i, stock in enumerate(previous_top)}
             
             rank_change = []
-            for stock in current_top30:
+            for stock in current_top:
                 ts_code = stock['ts_code']
                 current_r = current_rank.get(ts_code, 999)
                 previous_r = previous_rank.get(ts_code, 999)
@@ -529,7 +529,24 @@ def get_rank_change(current_date: str = None):
                     'rank_change': rank_change_value
                 })
             
-            return {"success": True, "data": rank_change, "current_date": current_trade_date, "previous_date": previous_trade_date}
+            # 添加消失的股票
+            for stock in previous_top:
+                ts_code = stock['ts_code']
+                if ts_code not in current_rank:
+                    previous_r = previous_rank.get(ts_code, 999)
+                    
+                    stock_copy = stock.copy()
+                    if 'cumulative_change' in stock_copy:
+                        stock_copy['ten_day_change'] = stock_copy['cumulative_change']
+                    
+                    rank_change.append({
+                        **stock_copy,
+                        'current_rank': 999,
+                        'previous_rank': previous_r,
+                        'rank_change': 'OUT'
+                    })
+            
+            return {"success": True, "data": rank_change, "current_date": current_trade_date, "previous_date": previous_trade_date, "limit": limit}
         finally:
             db.close()
     except Exception as e:

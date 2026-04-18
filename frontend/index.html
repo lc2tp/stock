@@ -1618,6 +1618,13 @@
                     </div>
                     <div class="filter-controls">
                         <div class="filter-item">
+                            <label for="rank-limit-filter">排名数：</label>
+                            <select id="rank-limit-filter">
+                                <option value="30">前30名</option>
+                                <option value="100" selected>前100名</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
                             <label for="rank-type-filter">类型：</label>
                             <select id="rank-type-filter">
                                 <option value="all">全部</option>
@@ -3309,7 +3316,7 @@
                     
                     // 加载排名变化
                     console.log('加载排名变化');
-                    loadRankChange(formattedDate);
+                    loadRankChange(formattedDate, 30);
                 } else {
                     console.log('API请求失败:', result.message);
                     top30Content.innerHTML = `<div class="message error">${result.message}</div>`;
@@ -3410,13 +3417,13 @@
         }
         
         // 加载排名变化
-        async function loadRankChange(currentDateStr) {
+        async function loadRankChange(currentDateStr, limit = 100) {
             const content = document.getElementById('rank-change-content');
             
             try {
                 content.innerHTML = '<div class="loading">加载中...</div>';
                 
-                const apiUrl = `${API_BASE}/api/tushare/rank-change?current_date=${currentDateStr}`;
+                const apiUrl = `${API_BASE}/api/tushare/rank-change?current_date=${currentDateStr}&limit=${limit}`;
                 
                 const response = await fetch(apiUrl);
                 const result = await response.json();
@@ -3502,6 +3509,7 @@
 
         // 加载筛选后的排名变化
         async function loadFilteredRankChange() {
+            const limitFilter = document.getElementById('rank-limit-filter').value;
             const typeFilter = document.getElementById('rank-type-filter').value;
             const dateInput = document.getElementById('rank-date-filter').value;
             
@@ -3511,14 +3519,14 @@
             }
             
             const formattedDate = dateInput.replace(/-/g, '');
-            console.log('筛选条件 - 类型:', typeFilter, '日期:', formattedDate);
+            console.log('筛选条件 - 排名数:', limitFilter, '类型:', typeFilter, '日期:', formattedDate);
             
             const content = document.getElementById('rank-change-content');
             
             try {
                 content.innerHTML = '<div class="loading">加载中...</div>';
                 
-                const apiUrl = `${API_BASE}/api/tushare/rank-change?current_date=${formattedDate}`;
+                const apiUrl = `${API_BASE}/api/tushare/rank-change?current_date=${formattedDate}&limit=${limitFilter}`;
                 console.log('API请求地址:', apiUrl);
                 
                 const response = await fetch(apiUrl);
