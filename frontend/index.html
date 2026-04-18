@@ -5770,17 +5770,17 @@
                 const height = canvas.height;
                 
                 ctx.save();
-                ctx.globalAlpha = 0.3;
+                ctx.globalAlpha = 0.25;
                 ctx.fillStyle = '#999999';
-                ctx.font = 'bold 96px Arial';
+                ctx.font = 'bold 48px Arial';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 
-                const stepX = width / 3;
-                const stepY = height / 3;
+                const stepX = width / 5;
+                const stepY = height / 5;
                 
-                for (let row = 0; row < 4; row++) {
-                    for (let col = 0; col < 4; col++) {
+                for (let row = 0; row < 7; row++) {
+                    for (let col = 0; col < 7; col++) {
                         const x = col * stepX;
                         const y = row * stepY;
                         
