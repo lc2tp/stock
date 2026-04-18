@@ -1188,6 +1188,10 @@
                     <span class="nav-icon">📋</span>
                     <span>涨幅榜单</span>
                 </div>
+                <div class="nav-item" onclick="showPage('top100')">
+                    <span class="nav-icon">📋</span>
+                    <span>100涨幅</span>
+                </div>
                 <div class="nav-item" onclick="showPage('trend-stats')">
                     <span class="nav-icon">📈</span>
                     <span>趋势统计</span>
@@ -1635,6 +1639,32 @@
             </div>
         </div>
         
+        <!-- 100涨幅页面 -->
+        <div id="top100-page" class="page">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-title-icon">🏆</div>
+                        <span>100涨幅</span>
+                    </div>
+                    <div class="filter-controls">
+                        <div class="period-selector">
+                            <button class="period-btn active" onclick="loadTop100Data(2)">2日</button>
+                            <button class="period-btn" onclick="loadTop100Data(3)">3日</button>
+                            <button class="period-btn" onclick="loadTop100Data(4)">4日</button>
+                            <button class="period-btn" onclick="loadTop100Data(5)">5日</button>
+                            <button class="period-btn" onclick="loadTop100Data(10)">10日</button>
+                        </div>
+                        <div class="date-selector">
+                            <input type="date" id="top100-date" value="">
+                            <button class="btn" onclick="loadTop100Data()">查询</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="top100-content"></div>
+            </div>
+        </div>
+        
         <!-- 趋势统计页面 -->
         <div id="trend-stats-page" class="page">
             <div class="card">
@@ -1960,6 +1990,7 @@
         let currentPeriod = 7;
         let currentTrendPeriod = 7;
         let currentTop30Days = 2;
+        let currentTop100Days = 10;
         let selectedDate = null;
         let themeChart = null;
         let hotThemeChart = null;
@@ -2052,6 +2083,11 @@
                 document.getElementById('top30-date').value = today;
                 document.getElementById('rank-date-filter').value = today;
                 loadTop30Data(2);
+            } else if (page === 'top100') {
+                // 设置默认日期为今天
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('top100-date').value = today;
+                loadTop100Data(10);
             } else if (page === 'trend-stats') {
                 // 设置默认日期为今天
                 const today = new Date().toISOString().split('T')[0];
@@ -3287,7 +3323,92 @@
                 console.log('加载完成');
             }
         }
-
+        
+        // 加载100涨幅数据
+        async function loadTop100Data(days) {
+            if (days !== undefined) {
+                currentTop100Days = days;
+            }
+            
+            // 更新按钮状态
+            document.querySelectorAll('#top100-page .period-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === `${currentTop100Days}日`) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            let date = document.getElementById('top100-date').value;
+            
+            if (!date) {
+                date = new Date().toISOString().split('T')[0];
+                document.getElementById('top100-date').value = date;
+            }
+            
+            const formattedDate = date.replace(/-/g, '');
+            const top100Content = document.getElementById('top100-content');
+            
+            try {
+                top100Content.innerHTML = '<div class="loading">加载中...</div>';
+                
+                const response = await fetch(`${API_BASE}/api/tushare/ten-day-top30?target_date=${formattedDate}&days=${currentTop100Days}&limit=100`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const stocks = result.data;
+                    let html = `
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>排名</th>
+                                    <th>代码</th>
+                                    <th>名称</th>
+                                    <th>概念</th>
+                                    <th>价格</th>
+                                    <th>${currentTop100Days}日涨幅(%)</th>
+                                    <th>单日涨幅(%)</th>
+                                    <th>成交金额(亿)</th>
+                                    <th>换手率(%)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `
+                    
+                    stocks.forEach((stock, index) => {
+                        const change = stock.cumulative_change !== undefined ? stock.cumulative_change : stock.ten_day_change;
+                        html += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${stock.symbol}</td>
+                                <td>${stock.name}</td>
+                                <td>${stock.industry || '-'}</td>
+                                <td>${stock.price || '-'}</td>
+                                <td style="color: ${change >= 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">
+                                    ${change >= 0 ? '+' : ''}${change}
+                                </td>
+                                <td style="color: ${stock.daily_change >= 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">
+                                    ${stock.daily_change >= 0 ? '+' : ''}${stock.daily_change}
+                                </td>
+                                <td>${stock.amount ? (stock.amount / 100000).toFixed(2) : '-'}</td>
+                                <td>${stock.turnover ? stock.turnover.toFixed(2) : '-'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                            </tbody>
+                        </table>
+                    `;
+                    top100Content.innerHTML = html;
+                } else {
+                    top100Content.innerHTML = `<div class="message error">${result.message}</div>`;
+                }
+            } catch (error) {
+                console.error('加载涨幅数据失败:', error);
+                top100Content.innerHTML = '<div class="message error">加载数据失败，请重试</div>';
+            }
+        }
+        
         // 加载排名变化
         async function loadRankChange(currentDateStr) {
             const content = document.getElementById('rank-change-content');

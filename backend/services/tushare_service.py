@@ -237,11 +237,12 @@ class TushareService:
             traceback.print_exc()
             return []
     
-    def calculate_top30(self, target_date, days=10):
+    def calculate_top30(self, target_date, days=10, limit=30):
         """
-        计算指定日期的累计涨幅前30的股票
+        计算指定日期的累计涨幅前N的股票
         :param target_date: 日期，格式为'YYYYMMDD'
         :param days: 统计天数，默认为10
+        :param limit: 返回数量，默认为30
         :return: 股票列表
         """
         try:
@@ -332,7 +333,7 @@ class TushareService:
             self.db.close()
             
             result.sort(key=lambda x: x['cumulative_change'], reverse=True)
-            return result[:30]
+            return result[:limit]
             
         except Exception as e:
             print(f"计算涨幅失败: {e}")

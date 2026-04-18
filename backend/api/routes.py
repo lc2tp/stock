@@ -538,15 +538,15 @@ def get_rank_change(current_date: str = None):
         return {"success": False, "message": f"获取排名变化失败: {str(e)}"}
 
 @router.get("/api/tushare/ten-day-top30")
-def get_ten_day_top30(target_date: str = None, days: int = Query(10, ge=2, le=10)):
+def get_ten_day_top30(target_date: str = None, days: int = Query(10, ge=2, le=10), limit: int = Query(30, ge=1, le=200)):
     try:
         if not target_date:
             today = date.today()
             target_date = today.strftime('%Y%m%d')
         
-        stocks = get_tushare_service().calculate_top30(target_date, days=days)
+        stocks = get_tushare_service().calculate_top30(target_date, days=days, limit=limit)
         
-        return {"success": True, "data": stocks, "date": target_date, "days": days}
+        return {"success": True, "data": stocks, "date": target_date, "days": days, "limit": limit}
     except Exception as e:
         return {"success": False, "message": f"获取数据失败: {str(e)}"}
 
