@@ -1670,6 +1670,30 @@
                 </div>
                 <div id="top100-content"></div>
             </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-title-icon">📊</div>
+                        <span>排名变化</span>
+                    </div>
+                    <div class="filter-controls">
+                        <div class="filter-item">
+                            <label for="top100-rank-type-filter">类型：</label>
+                            <select id="top100-rank-type-filter">
+                                <option value="all">全部</option>
+                                <option value="up">上升</option>
+                                <option value="down">下降</option>
+                                <option value="new">新</option>
+                                <option value="out">消失</option>
+                                <option value="nochange">无变化</option>
+                            </select>
+                        </div>
+                        <button id="top100-rank-filter-btn" class="btn" onclick="loadTop100RankChange()">应用筛选</button>
+                    </div>
+                </div>
+                <div id="top100-rank-change-content"></div>
+            </div>
         </div>
         
         <!-- 趋势统计页面 -->
@@ -3407,13 +3431,149 @@
                         </table>
                     `;
                     top100Content.innerHTML = html;
+                    
+                    // 加载排名变化
+                    loadTop100RankChangeData(formattedDate);
                 } else {
                     top100Content.innerHTML = `<div class="message error">${result.message}</div>`;
+                    document.getElementById('top100-rank-change-content').innerHTML = '<div class="message error">加载失败</div>';
                 }
             } catch (error) {
                 console.error('加载涨幅数据失败:', error);
                 top100Content.innerHTML = '<div class="message error">加载数据失败，请重试</div>';
+                document.getElementById('top100-rank-change-content').innerHTML = '<div class="message error">加载失败</div>';
             }
+        }
+        
+        let currentTop100RankData = null;
+        
+        // 加载100涨幅排名变化数据
+        async function loadTop100RankChangeData(currentDateStr) {
+            const content = document.getElementById('top100-rank-change-content');
+            
+            try {
+                content.innerHTML = '<div class="loading">加载中...</div>';
+                
+                const apiUrl = `${API_BASE}/api/tushare/rank-change?current_date=${currentDateStr}&limit=100`;
+                
+                const response = await fetch(apiUrl);
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentTop100RankData = result.data;
+                    renderTop100RankChange(currentTop100RankData);
+                } else {
+                    content.innerHTML = `<div class="message error">${result.message}</div>`;
+                }
+            } catch (error) {
+                console.error('加载排名变化失败:', error);
+                content.innerHTML = '<div class="message error">加载排名变化失败，请重试</div>';
+            }
+        }
+        
+        // 渲染100涨幅排名变化
+        function renderTop100RankChange(data) {
+            const content = document.getElementById('top100-rank-change-content');
+            
+            let html = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>排名变化</th>
+                            <th>当前排名</th>
+                            <th>代码</th>
+                            <th>名称</th>
+                            <th>价格</th>
+                            <th>10日涨幅(%)</th>
+                            <th>单日涨幅(%)</th>
+                            <th>成交金额(亿)</th>
+                            <th>换手率(%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            data.forEach(stock => {
+                let changeClass = 'rank-nochange';
+                let changeText = '';
+                
+                if (stock.rank_change === 'NEW') {
+                    changeClass = 'rank-new';
+                    changeText = '<span class="rank-icon rank-icon-new">🆕</span><span class="rank-text">新</span>';
+                } else if (stock.rank_change === 'OUT') {
+                    changeClass = 'rank-out';
+                    changeText = '<span class="rank-icon rank-icon-out">❌</span><span class="rank-text">消失</span>';
+                } else if (stock.rank_change > 0) {
+                    changeClass = 'rank-up';
+                    changeText = `<span class="rank-icon rank-icon-up">↑</span><span class="rank-text">${stock.rank_change}</span>`;
+                } else if (stock.rank_change < 0) {
+                    changeClass = 'rank-down';
+                    changeText = `<span class="rank-icon rank-icon-down">↓</span><span class="rank-text">${Math.abs(stock.rank_change)}</span>`;
+                } else {
+                    changeText = '<span class="rank-icon rank-icon-nochange">→</span><span class="rank-text">-</span>';
+                }
+                
+                const tenDayChange = stock.ten_day_change !== undefined ? stock.ten_day_change : (stock.cumulative_change || 0);
+                const price = stock.price || '-';
+                const amount = stock.amount ? (stock.amount / 100000).toFixed(2) : '-';
+                const turnover = stock.turnover ? stock.turnover.toFixed(2) : '-';
+                
+                html += `
+                    <tr>
+                        <td class="${changeClass} rank-cell">${changeText}</td>
+                        <td>${stock.current_rank}</td>
+                        <td>${stock.symbol}</td>
+                        <td>${stock.name}</td>
+                        <td>${price}</td>
+                        <td style="color: ${tenDayChange >= 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">
+                            ${tenDayChange >= 0 ? '+' : ''}${tenDayChange}
+                        </td>
+                        <td style="color: ${stock.daily_change >= 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">
+                            ${stock.daily_change >= 0 ? '+' : ''}${stock.daily_change}
+                        </td>
+                        <td>${amount}</td>
+                        <td>${turnover}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+            
+            content.innerHTML = html;
+        }
+        
+        // 加载筛选后的100涨幅排名变化
+        async function loadTop100RankChange() {
+            if (!currentTop100RankData) {
+                alert('请先加载数据');
+                return;
+            }
+            
+            const typeFilter = document.getElementById('top100-rank-type-filter').value;
+            
+            let data = [...currentTop100RankData];
+            
+            if (typeFilter !== 'all') {
+                data = data.filter(stock => {
+                    if (typeFilter === 'up') {
+                        return stock.rank_change > 0;
+                    } else if (typeFilter === 'down') {
+                        return stock.rank_change < 0;
+                    } else if (typeFilter === 'new') {
+                        return stock.rank_change === 'NEW';
+                    } else if (typeFilter === 'out') {
+                        return stock.rank_change === 'OUT';
+                    } else if (typeFilter === 'nochange') {
+                        return stock.rank_change === 0;
+                    }
+                    return true;
+                });
+            }
+            
+            renderTop100RankChange(data);
         }
         
         // 加载排名变化
