@@ -3340,7 +3340,7 @@
                     
                     // 加载排名变化
                     console.log('加载排名变化');
-                    loadRankChange(formattedDate, 30);
+                    loadRankChange(formattedDate, currentTop30Days, 30);
                 } else {
                     console.log('API请求失败:', result.message);
                     top30Content.innerHTML = `<div class="message error">${result.message}</div>`;
@@ -3433,7 +3433,7 @@
                     top100Content.innerHTML = html;
                     
                     // 加载排名变化
-                    loadTop100RankChangeData(formattedDate);
+                    loadTop100RankChangeData(formattedDate, currentTop100Days);
                 } else {
                     top100Content.innerHTML = `<div class="message error">${result.message}</div>`;
                     document.getElementById('top100-rank-change-content').innerHTML = '<div class="message error">加载失败</div>';
@@ -3446,22 +3446,24 @@
         }
         
         let currentTop100RankData = null;
+        let currentTop100RankDays = 10;
         
         // 加载100涨幅排名变化数据
-        async function loadTop100RankChangeData(currentDateStr) {
+        async function loadTop100RankChangeData(currentDateStr, days = 10) {
+            currentTop100RankDays = days;
             const content = document.getElementById('top100-rank-change-content');
             
             try {
                 content.innerHTML = '<div class="loading">加载中...</div>';
                 
-                const apiUrl = `${API_BASE}/api/tushare/rank-change?current_date=${currentDateStr}&limit=100`;
+                const apiUrl = `${API_BASE}/api/tushare/rank-change?current_date=${currentDateStr}&days=${days}&limit=100`;
                 
                 const response = await fetch(apiUrl);
                 const result = await response.json();
                 
                 if (result.success) {
                     currentTop100RankData = result.data;
-                    renderTop100RankChange(currentTop100RankData);
+                    renderTop100RankChange(currentTop100RankData, currentTop100RankDays);
                 } else {
                     content.innerHTML = `<div class="message error">${result.message}</div>`;
                 }
@@ -3472,7 +3474,7 @@
         }
         
         // 渲染100涨幅排名变化
-        function renderTop100RankChange(data) {
+        function renderTop100RankChange(data, days) {
             const content = document.getElementById('top100-rank-change-content');
             
             let html = `
@@ -3484,7 +3486,7 @@
                             <th>代码</th>
                             <th>名称</th>
                             <th>价格</th>
-                            <th>10日涨幅(%)</th>
+                            <th>${days}日涨幅(%)</th>
                             <th>单日涨幅(%)</th>
                             <th>成交金额(亿)</th>
                             <th>换手率(%)</th>
@@ -3573,91 +3575,30 @@
                 });
             }
             
-            renderTop100RankChange(data);
+            renderTop100RankChange(data, currentTop100RankDays);
         }
         
+        let currentRankData = null;
+        let currentRankDays = 10;
+        let currentRankLimit = 100;
+        
         // 加载排名变化
-        async function loadRankChange(currentDateStr, limit = 100) {
+        async function loadRankChange(currentDateStr, days = 10, limit = 100) {
+            currentRankDays = days;
+            currentRankLimit = limit;
             const content = document.getElementById('rank-change-content');
             
             try {
                 content.innerHTML = '<div class="loading">加载中...</div>';
                 
-                const apiUrl = `${API_BASE}/api/tushare/rank-change?current_date=${currentDateStr}&limit=${limit}`;
+                const apiUrl = `${API_BASE}/api/tushare/rank-change?current_date=${currentDateStr}&days=${days}&limit=${limit}`;
                 
                 const response = await fetch(apiUrl);
                 const result = await response.json();
                 
                 if (result.success) {
-                    const data = result.data;
-                    let html = `
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>排名变化</th>
-                                    <th>当前排名</th>
-                                    <th>代码</th>
-                                    <th>名称</th>
-                                    <th>价格</th>
-                                    <th>10日涨幅(%)</th>
-                                    <th>单日涨幅(%)</th>
-                                    <th>成交金额(亿)</th>
-                                    <th>换手率(%)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
-                    
-                    data.forEach(stock => {
-                            let changeClass = 'rank-nochange';
-                            let changeText = '';
-                            
-                            if (stock.rank_change === 'NEW') {
-                                changeClass = 'rank-new';
-                                changeText = '<span class="rank-icon rank-icon-new">🆕</span><span class="rank-text">新</span>';
-                            } else if (stock.rank_change === 'OUT') {
-                                changeClass = 'rank-out';
-                                changeText = '<span class="rank-icon rank-icon-out">❌</span><span class="rank-text">消失</span>';
-                            } else if (stock.rank_change > 0) {
-                                changeClass = 'rank-up';
-                                changeText = `<span class="rank-icon rank-icon-up">↑</span><span class="rank-text">${stock.rank_change}</span>`;
-                            } else if (stock.rank_change < 0) {
-                                changeClass = 'rank-down';
-                                changeText = `<span class="rank-icon rank-icon-down">↓</span><span class="rank-text">${Math.abs(stock.rank_change)}</span>`;
-                            } else {
-                                changeText = '<span class="rank-icon rank-icon-nochange">→</span><span class="rank-text">-</span>';
-                            }
-                            
-                            const tenDayChange = stock.ten_day_change !== undefined ? stock.ten_day_change : (stock.cumulative_change || 0);
-                            const price = stock.price || '-';
-                            const amount = stock.amount ? (stock.amount / 100000).toFixed(2) : '-';
-                            const turnover = stock.turnover ? stock.turnover.toFixed(2) : '-';
-                            
-                            html += `
-                                <tr>
-                                    <td class="${changeClass} rank-cell">${changeText}</td>
-                                    <td>${stock.current_rank}</td>
-                                    <td>${stock.symbol}</td>
-                                    <td>${stock.name}</td>
-                                    <td>${price}</td>
-                                    <td style="color: ${tenDayChange >= 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">
-                                        ${tenDayChange >= 0 ? '+' : ''}${tenDayChange}
-                                    </td>
-                                    <td style="color: ${stock.daily_change >= 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">
-                                        ${stock.daily_change >= 0 ? '+' : ''}${stock.daily_change}
-                                    </td>
-                                    <td>${amount}</td>
-                                    <td>${turnover}</td>
-                                </tr>
-                            `;
-                        });
-                    
-                    html += `
-                            </tbody>
-                        </table>
-                    `;
-                    
-                    content.innerHTML = html;
+                    currentRankData = result.data;
+                    renderRankChange(currentRankData, currentRankDays);
                 } else {
                     content.innerHTML = `<div class="message error">${result.message}</div>`;
                 }
@@ -3665,6 +3606,80 @@
                 console.error('加载排名变化失败:', error);
                 content.innerHTML = '<div class="message error">加载排名变化失败，请重试</div>';
             }
+        }
+        
+        // 渲染排名变化
+        function renderRankChange(data, days) {
+            const content = document.getElementById('rank-change-content');
+            
+            let html = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>排名变化</th>
+                            <th>当前排名</th>
+                            <th>代码</th>
+                            <th>名称</th>
+                            <th>价格</th>
+                            <th>${days}日涨幅(%)</th>
+                            <th>单日涨幅(%)</th>
+                            <th>成交金额(亿)</th>
+                            <th>换手率(%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            data.forEach(stock => {
+                    let changeClass = 'rank-nochange';
+                    let changeText = '';
+                    
+                    if (stock.rank_change === 'NEW') {
+                        changeClass = 'rank-new';
+                        changeText = '<span class="rank-icon rank-icon-new">🆕</span><span class="rank-text">新</span>';
+                    } else if (stock.rank_change === 'OUT') {
+                        changeClass = 'rank-out';
+                        changeText = '<span class="rank-icon rank-icon-out">❌</span><span class="rank-text">消失</span>';
+                    } else if (stock.rank_change > 0) {
+                        changeClass = 'rank-up';
+                        changeText = `<span class="rank-icon rank-icon-up">↑</span><span class="rank-text">${stock.rank_change}</span>`;
+                    } else if (stock.rank_change < 0) {
+                        changeClass = 'rank-down';
+                        changeText = `<span class="rank-icon rank-icon-down">↓</span><span class="rank-text">${Math.abs(stock.rank_change)}</span>`;
+                    } else {
+                        changeText = '<span class="rank-icon rank-icon-nochange">→</span><span class="rank-text">-</span>';
+                    }
+                    
+                    const tenDayChange = stock.ten_day_change !== undefined ? stock.ten_day_change : (stock.cumulative_change || 0);
+                    const price = stock.price || '-';
+                    const amount = stock.amount ? (stock.amount / 100000).toFixed(2) : '-';
+                    const turnover = stock.turnover ? stock.turnover.toFixed(2) : '-';
+                    
+                    html += `
+                        <tr>
+                            <td class="${changeClass} rank-cell">${changeText}</td>
+                            <td>${stock.current_rank}</td>
+                            <td>${stock.symbol}</td>
+                            <td>${stock.name}</td>
+                            <td>${price}</td>
+                            <td style="color: ${tenDayChange >= 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">
+                                ${tenDayChange >= 0 ? '+' : ''}${tenDayChange}
+                            </td>
+                            <td style="color: ${stock.daily_change >= 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">
+                                ${stock.daily_change >= 0 ? '+' : ''}${stock.daily_change}
+                            </td>
+                            <td>${amount}</td>
+                            <td>${turnover}</td>
+                        </tr>
+                    `;
+                });
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+            
+            content.innerHTML = html;
         }
 
         // 加载筛选后的排名变化
@@ -3686,14 +3701,15 @@
             try {
                 content.innerHTML = '<div class="loading">加载中...</div>';
                 
-                const apiUrl = `${API_BASE}/api/tushare/rank-change?current_date=${formattedDate}&limit=${limitFilter}`;
+                const apiUrl = `${API_BASE}/api/tushare/rank-change?current_date=${formattedDate}&days=${currentRankDays}&limit=${limitFilter}`;
                 console.log('API请求地址:', apiUrl);
                 
                 const response = await fetch(apiUrl);
                 const result = await response.json();
                 
                 if (result.success) {
-                    let data = result.data;
+                    currentRankData = result.data;
+                    let data = [...currentRankData];
                     
                     if (typeFilter !== 'all') {
                         data = data.filter(stock => {
@@ -3713,81 +3729,13 @@
                     }
                     
                     console.log('筛选后的数据长度:', data.length);
-                    
-                    let html = `
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>排名变化</th>
-                                    <th>当前排名</th>
-                                    <th>代码</th>
-                                    <th>名称</th>
-                                    <th>价格</th>
-                                    <th>10日涨幅(%)</th>
-                                    <th>单日涨幅(%)</th>
-                                    <th>成交金额(亿)</th>
-                                    <th>换手率(%)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
-                    
-                    data.forEach(stock => {
-                        let changeClass = 'rank-nochange';
-                        let changeText = '';
-                        
-                        if (stock.rank_change === 'NEW') {
-                            changeClass = 'rank-new';
-                            changeText = '<span class="rank-icon rank-icon-new">🆕</span><span class="rank-text">新</span>';
-                        } else if (stock.rank_change === 'OUT') {
-                            changeClass = 'rank-out';
-                            changeText = '<span class="rank-icon rank-icon-out">❌</span><span class="rank-text">消失</span>';
-                        } else if (stock.rank_change > 0) {
-                            changeClass = 'rank-up';
-                            changeText = `<span class="rank-icon rank-icon-up">↑</span><span class="rank-text">${stock.rank_change}</span>`;
-                        } else if (stock.rank_change < 0) {
-                            changeClass = 'rank-down';
-                            changeText = `<span class="rank-icon rank-icon-down">↓</span><span class="rank-text">${Math.abs(stock.rank_change)}</span>`;
-                        } else {
-                            changeText = '<span class="rank-icon rank-icon-nochange">→</span><span class="rank-text">-</span>';
-                        }
-                        
-                        const tenDayChange = stock.ten_day_change !== undefined ? stock.ten_day_change : (stock.cumulative_change || 0);
-                        const price = stock.price || '-';
-                        const amount = stock.amount ? (stock.amount / 100000).toFixed(2) : '-';
-                        const turnover = stock.turnover ? stock.turnover.toFixed(2) : '-';
-                        
-                        html += `
-                            <tr>
-                                <td class="${changeClass} rank-cell">${changeText}</td>
-                                <td>${stock.current_rank}</td>
-                                <td>${stock.symbol}</td>
-                                <td>${stock.name}</td>
-                                <td>${price}</td>
-                                <td style="color: ${tenDayChange >= 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">
-                                    ${tenDayChange >= 0 ? '+' : ''}${tenDayChange}
-                                </td>
-                                <td style="color: ${stock.daily_change >= 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">
-                                    ${stock.daily_change >= 0 ? '+' : ''}${stock.daily_change}
-                                </td>
-                                <td>${amount}</td>
-                                <td>${turnover}</td>
-                            </tr>
-                        `;
-                    });
-                    
-                    html += `
-                            </tbody>
-                        </table>
-                    `;
-                    
-                    content.innerHTML = html;
+                    renderRankChange(data, currentRankDays);
                 } else {
                     content.innerHTML = `<div class="message error">${result.message}</div>`;
                 }
             } catch (error) {
-                console.error('加载排名变化失败:', error);
-                content.innerHTML = '<div class="message error">加载排名变化失败，请重试</div>';
+                console.error('加载筛选排名变化失败:', error);
+                content.innerHTML = '<div class="message error">加载失败，请重试</div>';
             }
         }
 

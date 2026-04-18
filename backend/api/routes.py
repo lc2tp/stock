@@ -463,7 +463,7 @@ def get_tushare_top30(date: str = None):
         return {"success": False, "message": f"获取数据失败: {str(e)}"}
 
 @router.get("/api/tushare/rank-change")
-def get_rank_change(current_date: str = None, limit: int = Query(30, ge=1, le=200)):
+def get_rank_change(current_date: str = None, days: int = Query(10, ge=2, le=10), limit: int = Query(30, ge=1, le=200)):
     try:
         if not current_date:
             current_date = date.today().strftime('%Y%m%d')
@@ -499,10 +499,10 @@ def get_rank_change(current_date: str = None, limit: int = Query(30, ge=1, le=20
             current_trade_date = dates_result[0][0]
             previous_trade_date = dates_result[1][0]
             
-            print(f"计算排名变化: 当天={current_trade_date}, 前一交易日={previous_trade_date}, limit={limit}")
+            print(f"计算排名变化: 当天={current_trade_date}, 前一交易日={previous_trade_date}, days={days}, limit={limit}")
             
-            current_top = get_tushare_service().calculate_top30(current_trade_date, days=10, limit=limit)
-            previous_top = get_tushare_service().calculate_top30(previous_trade_date, days=10, limit=limit)
+            current_top = get_tushare_service().calculate_top30(current_trade_date, days=days, limit=limit)
+            previous_top = get_tushare_service().calculate_top30(previous_trade_date, days=days, limit=limit)
             
             current_rank = {stock['ts_code']: i+1 for i, stock in enumerate(current_top)}
             previous_rank = {stock['ts_code']: i+1 for i, stock in enumerate(previous_top)}
@@ -546,7 +546,7 @@ def get_rank_change(current_date: str = None, limit: int = Query(30, ge=1, le=20
                         'rank_change': 'OUT'
                     })
             
-            return {"success": True, "data": rank_change, "current_date": current_trade_date, "previous_date": previous_trade_date, "limit": limit}
+            return {"success": True, "data": rank_change, "current_date": current_trade_date, "previous_date": previous_trade_date, "days": days, "limit": limit}
         finally:
             db.close()
     except Exception as e:
